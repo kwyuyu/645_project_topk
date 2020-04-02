@@ -1,12 +1,14 @@
 import enum
 
 
-class InsighType(enum.Enum):
-    POINT = 1
-    SHAPE = 2
+class InsightType(enum.Enum):
+    POINT = 0
+    SHAPE = 1
 
 
-class AggregateFunction(enum.Enum):
+
+
+class AggregateType(enum.Enum):
     SUM = 0
     RANK = 1
     PERCENTILE = 2
@@ -30,11 +32,11 @@ class AttributeValue(object):
         return self._value
 
     @value.setter
-    def value(self, val):
+    def value(self, val):output_phi = dict()
         self._value = val
 
     def __eq__(self, other):
-        if isinstance(other, str):
+        if isinstance(other, str) and other == '*':
             return self._value == '*'
         return self._value == other.value
 
@@ -72,6 +74,12 @@ class Subspace(object):
     def __setitem__(self, key, value):
         self._subspace[key] = value
 
+    def __hash__(self):
+        output_string = ''
+        for attr_val in self._subspace:
+            output_string += str(attr_val.value) + ','
+        return hash(output_string)
+
     def __repr__(self):
         return self._subspace.__repr__()
 
@@ -106,13 +114,15 @@ class SiblingGroup(object):
         for subspace in self._sibling_attribute:
             yield subspace
 
+    def __repr__(self):
+        return self._sibling_attribute.__repr__()
 
 class Extractor(object):
     def __init__(self, aggregate_function, measure_attribute):
         """
         Ce
         :param aggregate_function:
-        :type aggregate_function: AggregateFunction
+        :type aggregate_function: AggregateType
         :param measure_attribute: attribute dimension
         :type measure_attribute: int
         """
@@ -122,7 +132,3 @@ class Extractor(object):
     @property
     def Dx(self):
         return self.measure_attribute
-
-
-
-
