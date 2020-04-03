@@ -1,23 +1,6 @@
 import enum
 
 
-class InsightType(enum.Enum):
-    POINT = 0
-    SHAPE = 1
-
-
-
-
-class AggregateType(enum.Enum):
-    SUM = 0
-    RANK = 1
-    PERCENTILE = 2
-    DELTA_AVG = 3
-    DELTA_PREV = 4
-
-
-
-
 class AttributeValue(object):
     def __init__(self, _value = '*'):
         """
@@ -32,7 +15,7 @@ class AttributeValue(object):
         return self._value
 
     @value.setter
-    def value(self, val):output_phi = dict()
+    def value(self, val):
         self._value = val
 
     def __eq__(self, other):
@@ -89,11 +72,11 @@ class SiblingGroup(object):
         """
         SG(S, Di): a list of Subspace
         :param S:
-        :type S:
+        :type S: Subspace
         :param i:
-        :type i:
+        :type i: int
         :param _sibling_attribute:
-        :type _sibling_attribute: list
+        :type _sibling_attribute: list of AttributeValue
         """
         self.S = S
         self.Di = i
@@ -116,6 +99,7 @@ class SiblingGroup(object):
 
     def __repr__(self):
         return self._sibling_attribute.__repr__()
+
 
 class Extractor(object):
     def __init__(self, aggregate_function, measure_attribute):

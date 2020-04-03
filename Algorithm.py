@@ -13,7 +13,17 @@ class TopKInsight(object):
         self.dom = dict() # Di: set() of AttributeValue
 
 
+    # TODO: return type need more detail
     def insghts(self, depth, result_size):
+        """
+
+        :param depth:
+        :type depth: int
+        :param result_size:
+        :type result_size: int
+        :return:
+        :rtype: ??? list of sorted score? list of query by sorted score?
+        """
         # TODO: connect to database
         db_attribute_dim = self.DB.get_dimension() # abstrct method, need to implement
 
@@ -77,7 +87,7 @@ class TopKInsight(object):
         :param i:
         :type i: int
         :return:
-        :rtype: list of int
+        :rtype: OrderedDict
         """
         phi = collections.OrderedDict()
         for val in self.dom[i]:
@@ -98,6 +108,8 @@ class TopKInsight(object):
         :type level: int
         :param Ce:
         :type Ce: list of Extractor
+        :return:
+        :rtype: float
         """
         if level > 1:
             phi_level = collections.OrderedDict()
@@ -119,6 +131,17 @@ class TopKInsight(object):
 
 
     def _measurement(self, E, phi_level, S):
+        """
+
+        :param E:
+        :type E: AggregateType
+        :param phi_level:
+        :type phi_level: int
+        :param S:
+        :type S: Subspace
+        :return:
+        :rtype: float
+        """
         aggregate_function = AggregateFunctionFactory.get_aggregate_function(E)
         result = aggregate_function.measurement(phi)
         return result[S]
@@ -126,6 +149,13 @@ class TopKInsight(object):
 
     # TODO: enumerate all Ce
     def _enumerate_all_Ce(self, depth):
+        """
+
+        :param depth:
+        :type depth: int
+        :return:
+        :rtype: list of Ce
+        """
         raise Exception('Need to implement')
 
 
@@ -157,18 +187,43 @@ class TopKInsight(object):
 
 
     def _is_valid(self, SG, Ce):
+        """
+
+        :param SG:
+        :type SG: SiblingGroup
+        :param Ce:
+        :type Ce: list of Extractor
+        :return:
+        :rtype: boolean
+        """
         return SG.Di == Ce.Dx or SG.S[Ce.Dx] != '*'
 
 
 
     # TODO: imp function
     def _imp(self, SG):
+        """
+
+        :param SG:
+        :type SG: SiblingGroup
+        :return:
+        :rtype: float
+        """
         total = 0
         for S_ in SG:
             # SUM(S_) / SUM(<*, * , *>)
         return total
 
     def _sig(self, phi, insightType):
-        scoring = CalculateScoreFactory.get_calculate_score(insightType)
+        """
+
+        :param phi:
+        :type phi: OrderedDict: S: value
+        :param insightType:
+        :type insightType: InsightType
+        :return:
+        :rtype: float
+        """
+        scoring = ScoreCalculatorFactory.get_score_calculator(insightType)
         return scoring.sig(phi)
 

@@ -1,10 +1,25 @@
 import collections
-from Utils import *
+import enum
+
+
+class AggregateType(enum.Enum):
+    SUM = 0
+    RANK = 1
+    PERCENTILE = 2
+    DELTA_AVG = 3
+    DELTA_PREV = 4
 
 
 class AggregateFunctionFactory(object):
     @staticmethod
     def get_aggregate_function(aggregate_type):
+        """
+
+        :param aggregate_type:
+        :type aggregate_type: AggregateType
+        :return:
+        :rtype: AggregateFunction
+        """
         if aggregate_type == AggregateType.SUM:
             return Sum()
         elif aggregate_type == AggregateType.RANK:
@@ -24,7 +39,7 @@ class AggregateFunction(object):
         """
 
         :param phi:
-        :type phi: dictionary => Subspace: value
+        :type phi: OrderedDict => Subspace: value
         """
         raise Exception('Need to implement')
 

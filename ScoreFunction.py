@@ -1,26 +1,44 @@
-from Utils import *
+import enum
+import numpy as np
 from scipy import stats
 from scipy.stats import powerlaw, norm
-import numpy as np
 
 
-class CalculateScoreFactory(object):
+
+class InsightType(enum.Enum):
+    POINT = 0
+    SHAPE = 1
+
+
+class ScoreCalculatorFactory(object):
     @staticmethod
-    def get_calculate_score(insightType):
+    def get_score_calculator(insightType):
+        """
+
+        :param insightType:
+        :type insightType: InsightType
+        :return:
+        :rtype: ScoreCalculator
+        """
         if insightType == InsightType.POINT:
-            return PointCalculateScore()
+            return PointScoreCalculator()
         elif insightType == InsightType.SHAPE:
-            return ShapeCalcuateScore()
+            return ShapeScoreCalculator()
         else:
             return None
 
 
-class CalculateScore(object):
+class ScoreCalculator(object):
     def sig(self, phi):
+        """
+
+        :param phi:
+        :type phi: OrderedDict => Subspace: value
+        """
         raise Exception('Need to implement')
 
 # TODO: check point sig correctness
-class PointCalculateScore(CalculateScore):
+class PointScoreCalculator(ScoreCalculator):
     def sig(self, phi):
         X = [val for val in phi.value()]
         X -= max(X)
@@ -30,6 +48,6 @@ class PointCalculateScore(CalculateScore):
         return sig_t
 
 # TODO: shape sig
-class ShapeCalcuateScore(CalculateScore):
+class ShapeScoreCalculator(ScoreCalculator):
     def sig(self, phi):
         pass
