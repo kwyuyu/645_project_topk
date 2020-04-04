@@ -1,5 +1,6 @@
 import Heap
 import collections
+import re
 from Utils import *
 from ScoreFunction import *
 from AggregateFunction import *
@@ -7,10 +8,39 @@ from AggregateFunction import *
 
 class TopKInsight(object):
     def __init__(self, DB):
-        self.DB = DB
+        """
 
-        # TODO: dom function
-        self.dom = dict() # Di: set() of AttributeValue
+        :param DB:
+        :type DB: Database
+        """
+        self.DB = DB
+        self.dom = dict() # Di: list() of AttributeValue
+        self.table_dimension = 0
+        self.d = 0
+        self.attr_id = []
+        self.attr_name = []
+
+        self._generate_dom('allpaperauths')
+
+    def _generate_dom(self, table_name):
+        """
+
+        :param table_name:
+        :type table_name: str
+        """
+        # get table attribute name
+        raw_attr = self.DB.execute('select column_name from information_schema.columns where table_name = \'%s\' order by ordinal_position;' % (table_name))
+        self.table_dimension = len(raw_attr)
+
+        for i, attr_tuple in enumerate(raw_attr):
+            self.attr_id.append(i)
+            self.attr_name.append(attr_tuple[0])
+
+            self.dom[i] = list()
+
+            raw_output = self.DB.execute('select distinct %s from %s;' % (attr_tuple[0], table_name))
+            for raw_tuple in raw_output:
+                self.dom[i].append(AttributeValue(raw_tuple[0]))
 
 
     # TODO: return type need more detail
@@ -24,12 +54,9 @@ class TopKInsight(object):
         :return:
         :rtype: ??? list of sorted score? list of query by sorted score?
         """
-        # TODO: connect to database
-        db_attribute_dim = self.DB.get_dimension() # abstrct method, need to implement
-
         # R(D, M)
         # dimension of D
-        d = db_attribute_dim - 1
+        self.d = self.table_dimension - 1
 
         heap = Heap.MaxHeap(result_size)
         possible_Ce = self._enumerate_all_Ce(depth)
@@ -115,7 +142,7 @@ class TopKInsight(object):
             phi_level = collections.OrderedDict()
             D_e = Ce[level].Dx
 
-            for val in self.dom(D_e):
+            for val in self.dom[D_e]:
                 S_v = _S[:]
                 S_v[D_E] = val
                 M_v = self._recur_extract(S_v, level - 1, Ce)
@@ -211,6 +238,7 @@ class TopKInsight(object):
         """
         total = 0
         for S_ in SG:
+            pass
             # SUM(S_) / SUM(<*, * , *>)
         return total
 
