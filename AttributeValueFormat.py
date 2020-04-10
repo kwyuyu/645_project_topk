@@ -1,0 +1,117 @@
+from __future__ import annotations
+
+import enum
+from typing import *
+
+
+'''Enum'''
+class AttributeType(enum.Enum):
+    ALL = 0
+    NUMBER = 1
+    STRING = 2
+    NONE = 4
+
+
+'''Abstract'''
+class AttributeValue(object):
+    def __init__(self, _type: AttributeType):
+        self._type = _type
+
+    @property
+    def type(self):
+        return self._type
+
+    @property
+    def value(self):
+        return self._value
+
+    def __eq__(self, other: AttributeValue) -> bool:
+        raise NotImplemented('need to implement')
+
+    def __repr__(self):
+        return str(self._value)
+
+
+class AttributeValueNone(AttributeValue):
+    def __init__(self):
+        super().__init__(AttributeType.NONE)
+        self._value = None
+
+    def __eq__(self, other: AttributeValue) -> bool:
+        if other.type == AttributeType.NONE:
+            return True
+        return False
+
+
+class AttributeValueAll(AttributeValue):
+    def __init__(self):
+        super().__init__(AttributeType.ALL)
+        self._value = '*'
+
+    def __eq__(self, other: AttributeValue) -> bool:
+        if other.type == AttributeType.ALL:
+            return True
+        return False
+
+
+class AttributeValueString(AttributeValue):
+    def __init__(self, _value: str):
+        super().__init__(AttributeType.STRING)
+        self.value = _value
+
+    @property
+    def value(self):
+        return self._value
+
+    @value.setter
+    def value(self, val: str):
+        if not isinstance(val, str):
+            raise TypeError('Type should be str')
+        self._value = val
+
+    def __eq__(self, other: AttributeValue) -> bool:
+        if other.type == AttributeType.STRING:
+            return self.value == other.value
+        return False
+
+
+class AttributeValueNumber(AttributeValue):
+    def __init__(self, _value: Number):
+        super().__init__(AttributeType.NUMBER)
+        self.value = _value
+
+    @property
+    def value(self):
+        return self._value
+
+    @value.setter
+    def value(self, val: Number):
+        if not isinstance(val, int) and not isinstance(val, float):
+            raise TypeError('Type should be number')
+        self._value = val
+
+    def __eq__(self, other: AttributeValue) -> bool:
+        if other.type == AttributeType.NUMBER:
+            return self.value == other.value
+        return False
+
+
+
+
+
+'''Factory'''
+class AttributeValueFactory(object):
+    @staticmethod
+    def get_attribute_value(value: Number) -> AttributeValue:
+        if isinstance(value, int) or isinstance(value, float):
+            return AttributeValueNumber(value)
+        elif isinstance(value, str):
+            if value == '*':
+                return AttributeValueAll()
+            elif value == 'None':
+                return AttributeValueNone()
+            return AttributeValueString(value)
+        else:
+            return None
+
+
