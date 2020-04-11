@@ -6,6 +6,8 @@ def main():
     DB.connect('localhost', 5432, 'postgres', 'postgres')
 
     driver = TopKInsight(DB)
+    result = driver.insghts(5, [3, 1, 0])
+    print(result)
 
     DB.disconnnect()
 
@@ -13,6 +15,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
-
-

@@ -24,8 +24,3 @@ class Database(object):
     def disconnnect(self):
         self.curs.close()
         self.conn.close()
-
-
-
-
-

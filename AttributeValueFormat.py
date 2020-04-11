@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import enum
+import copy
 from typing import *
 
 
@@ -25,10 +26,13 @@ class AttributeValue(object):
     def value(self):
         return self._value
 
+    def deepcopy(self) -> AttributeValue:
+        return copy.deepcopy(self)
+
     def __eq__(self, other: AttributeValue) -> bool:
         raise NotImplemented('need to implement')
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return str(self._value)
 
 

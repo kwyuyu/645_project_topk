@@ -1,21 +1,31 @@
+from __future__ import annotations
+
 import collections
 import enum
-from Utils import *
 from typing import *
-from CustomType import *
+from CustomizedType import *
 
 
 '''Enum'''
 class AggregateType(enum.Enum):
-    RANK = 0
-    PERCENTILE = 1
-    DELTA_AVG = 2
-    DELTA_PREV = 3
+    SUM = 0
+    RANK = 1
+    PERCENTILE = 2
+    DELTA_AVG = 3
+    DELTA_PREV = 4
+
+    @staticmethod
+    def get_aggregate_types() -> List[AggregateType]:
+        output = []
+        for i, aggr_type in enumerate(AggregateType):
+            if aggr_type != AggregateType.SUM:
+                output.append(aggr_type)
+        return output
 
 
 '''Interface'''
 class AggregateFunction(object):
-    def measurement(self, phi: OrderedDict[Subspace, Number]) -> Number:
+    def measurement(self, phi: OrderedDict[Subspace, Number]) -> OrderedDict[Subspace, Number]:
         """
 
         :param phi:
@@ -27,7 +37,7 @@ class AggregateFunction(object):
 
 
 class Rank(AggregateFunction):
-    def measurement(self, phi: OrderedDict[Subspace, Number]) -> Number:
+    def measurement(self, phi: OrderedDict[Subspace, Number]) -> OrderedDict[Subspace, Number]:
         output_phi = collections.OrderedDict()
         sort_phi_value = sorted(phi, key = phi.__getitem__, reverse = True)
         for i, S in enumerate(sort_phi_value):
@@ -36,31 +46,33 @@ class Rank(AggregateFunction):
 
 
 class Percentile(AggregateFunction):
-    def measurement(self, phi: OrderedDict[Subspace, Number]) -> Number:
+    def measurement(self, phi: OrderedDict[Subspace, Number]) -> OrderedDict[Subspace, Number]:
         output_phi = collections.OrderedDict()
-        total = sum([val for val in phi.value()])
+        total = sum([val for val in phi.values()])
         for S, val in phi.items():
             output_phi[S] = (val / total) * 100
         return output_phi
 
 
 class DeltaAvg(AggregateFunction):
-    def measurement(self, phi: OrderedDict[Subspace, Number]) -> float:
+    def measurement(self, phi: OrderedDict[Subspace, Number]) -> OrderedDict[Subspace, Number]:
         output_phi = collections.OrderedDict()
-        avg = sum([val for val in phi.value()]) / len(phi)
+        avg = sum([val for val in phi.values()]) / len(phi)
         for S, val in phi.items():
             output_phi[S] = val - avg
         return output_phi
 
 
 class DeltaPrev(AggregateFunction):
-    def measurement(self, phi: OrderedDict[Subspace, Number]) -> float:
+    def measurement(self, phi: OrderedDict[Subspace, Number]) -> OrderedDict[Subspace, Number]:
         output_phi = collections.OrderedDict()
+        prev_S = None
         for i, S in enumerate(list(phi)):
             if i == 0:
                 output_phi[S] = 0
             else:
-                output_phi[S] = phi[i] - phi[i-1]
+                output_phi[S] = phi[S] - phi[prev_S]
+            prev_S = S
         return output_phi
 
 

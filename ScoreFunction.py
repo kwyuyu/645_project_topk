@@ -3,7 +3,7 @@ import numpy as np
 from scipy import stats
 from scipy.stats import powerlaw, norm
 from typing import *
-from CustomType import *
+from CustomizedType import *
 from Utils import *
 
 
@@ -27,21 +27,20 @@ class ScoreCalculator(object):
         raise NotImplemented('Need to implement')
 
 
-# TODO: check point sig correctness
+# TODO: point sig
 class PointScoreCalculator(ScoreCalculator):
     def sig(self, phi: OrderedDict[Subspace, Number]) -> Number:
-        X = [val for val in phi.value()]
-        X -= max(X)
-        power_law = power_law(X)
-        gauss_distribute = norm.rvs(size = len(power_law))
-        sig_t = 1 - stats.ttest_ind(power_law, gauss_distribute)[1]
-        return sig_t
+        import random
+        return random.random()
+        raise NotImplemented('Need to implement')
 
 
 # TODO: shape sig
 class ShapeScoreCalculator(ScoreCalculator):
     def sig(self, phi: OrderedDict[Subspace, Number]) -> Number:
-        pass
+        import random
+        return random.random()
+        raise NotImplemented('Need to implement')
 
 
 '''Factory'''
