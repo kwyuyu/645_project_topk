@@ -3,7 +3,11 @@ from __future__ import annotations
 import collections
 import enum
 from typing import *
-from CustomizedType import *
+from abc import *
+
+
+if TYPE_CHECKING:
+    from CustomizedType import *
 
 
 '''Enum'''
@@ -24,7 +28,8 @@ class AggregateType(enum.Enum):
 
 
 '''Interface'''
-class AggregateFunction(object):
+class AggregateFunction(ABC):
+    @abstractmethod
     def measurement(self, phi: OrderedDict[Subspace, Number]) -> OrderedDict[Subspace, Number]:
         """
 

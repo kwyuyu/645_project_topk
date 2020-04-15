@@ -3,6 +3,7 @@ from __future__ import annotations
 import enum
 import copy
 from typing import *
+from abc import *
 
 
 '''Enum'''
@@ -14,8 +15,9 @@ class AttributeType(enum.Enum):
 
 
 '''Abstract'''
-class AttributeValue(object):
+class AttributeValue(ABC):
     def __init__(self, _type: AttributeType):
+        self._value = None
         self._type = _type
 
     @property
@@ -29,6 +31,7 @@ class AttributeValue(object):
     def deepcopy(self) -> AttributeValue:
         return copy.deepcopy(self)
 
+    @abstractmethod
     def __eq__(self, other: AttributeValue) -> bool:
         raise NotImplemented('need to implement')
 
@@ -63,11 +66,7 @@ class AttributeValueString(AttributeValue):
         super().__init__(AttributeType.STRING)
         self.value = _value
 
-    @property
-    def value(self):
-        return self._value
-
-    @value.setter
+    @AttributeValue.value.setter
     def value(self, val: str):
         if not isinstance(val, str):
             raise TypeError('Type should be str')
@@ -84,11 +83,7 @@ class AttributeValueNumber(AttributeValue):
         super().__init__(AttributeType.NUMBER)
         self.value = _value
 
-    @property
-    def value(self):
-        return self._value
-
-    @value.setter
+    @AttributeValue.value.setter
     def value(self, val: Number):
         if not isinstance(val, int) and not isinstance(val, float):
             raise TypeError('Type should be number')
@@ -106,7 +101,7 @@ class AttributeValueNumber(AttributeValue):
 '''Factory'''
 class AttributeValueFactory(object):
     @staticmethod
-    def get_attribute_value(value: Number) -> AttributeValue:
+    def get_attribute_value(value: NumberString) -> AttributeValue:
         if isinstance(value, int) or isinstance(value, float):
             return AttributeValueNumber(value)
         elif isinstance(value, str):

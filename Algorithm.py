@@ -1,12 +1,18 @@
+from __future__ import annotations
+
 import Heap
 import collections
 from typing import *
-from CustomizedType import *
+
 from Utils import *
 from ScoreFunction import *
 from AggregateFunctionFormat import *
-from AggregateFunctionFormat import *
+from AttributeValueFormat import *
 from DatabaseOperation import *
+
+
+if TYPE_CHECKING:
+    from CustomizedType import *
 
 
 class TopKInsight(object):
@@ -41,40 +47,15 @@ class TopKInsight(object):
 
 
 
-    '''Main algorithm'''
-    # TODO: return type need more detail
-    def insghts(self, result_size: int, insight_dimension: List[int]) -> list:
-        """
-
-        :param result_size:
-        :type result_size: int
-        :param insight_dimension: the dimension that each Extractor used to measure.
-        :type insight_dimension: List[int]
-        :return:
-        :rtype: ??? list of sorted score? list of query by sorted score?
-        """
-        self.__set_measurement(insight_dimension[0])
-        self.depth = len(insight_dimension)
-
-        heap = Heap.Heap(result_size)
-        possible_Ce = self.__enumerate_all_Ce(self.depth, insight_dimension)
-
-        for Ce in possible_Ce:
-            for i in range(self.table_dimension):
-                if i != self.M:
-                    S = Subspace.create_all_start_subspace(self.table_dimension, self.M)
-                    self.__enumerate_insight(S, i, Ce, heap)
-
-        return heap.get_nlargest()
 
 
     '''Initialization'''
     def __generate_dom(self, table_name: str):
         """
 
-        :param table_name:
-        :type table_name: str
-        """
+		:param table_name:
+		:type table_name: str
+		"""
         # get table attribute name
         raw_attr = self.DB.execute(
             'select column_name from information_schema.columns where table_name = \'%s\' order by ordinal_position;' % (
@@ -99,6 +80,32 @@ class TopKInsight(object):
 
 
 
+    '''Main algorithm'''
+    def insghts(self, result_size: int, insight_dimension: List[int]) -> List[ComponentExtractor]:
+        """
+
+        :param result_size:
+        :type result_size: int
+        :param insight_dimension: the dimension that each Extractor used to measure.
+        :type insight_dimension: List[int], ex. [measurement, D0, D1, D2, ...]
+        :return:
+        :rtype: sorted List[ComponentExtractor]
+        """
+        self.__set_measurement(insight_dimension[0])
+        self.depth = len(insight_dimension)
+
+        heap = Heap.Heap(result_size)
+        possible_Ce = self.__enumerate_all_Ce(self.depth, insight_dimension)
+
+        for Ce in possible_Ce:
+            for i in range(self.table_dimension):
+                if i != self.M:
+                    S = Subspace.create_all_start_subspace(self.table_dimension, self.M)
+                    self.__enumerate_insight(S, i, Ce, heap)
+
+        return heap.get_nlargest()
+
+
     def __enumerate_insight(self, S: Subspace, i: int, Ce: ComponentExtractor, heap: Heap):
         """
 
@@ -120,9 +127,14 @@ class TopKInsight(object):
             for _, insight_type in enumerate(InsightType):
                 score = self.__imp(SG) * self.__sig(phi, insight_type)
 
-                if score > local_heap.get_max():
-                    local_heap.push(score)
-                    heap.push(score)
+                if score > local_heap.get_max().score:
+                    new_Ce = Ce.deepcopy()
+                    new_Ce.score = score
+                    new_Ce.insight_type = insight_type
+                    new_Ce.SG = SG
+
+                    local_heap.push(new_Ce)
+                    heap.push(new_Ce)
 
         # phase II
         for attr_val in self.dom[i]: # Di

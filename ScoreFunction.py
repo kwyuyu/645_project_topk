@@ -1,10 +1,16 @@
+from __future__ import annotations
+
 import enum
 import numpy as np
 from scipy import stats
 from scipy.stats import powerlaw, norm
 from typing import *
-from CustomizedType import *
-from Utils import *
+from abc import *
+
+
+if TYPE_CHECKING:
+    from Utils import *
+    from CustomizedType import *
 
 
 
@@ -14,8 +20,10 @@ class InsightType(enum.Enum):
     SHAPE = 1
 
 
+
 '''interface'''
-class ScoreCalculator(object):
+class ScoreCalculator(ABC):
+    @abstractmethod
     def sig(self, phi: OrderedDict[Subspace, Number]) -> Number:
         """
 

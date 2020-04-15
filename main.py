@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from DatabaseOperation import *
 from Algorithm import *
 
@@ -9,7 +11,7 @@ def main():
     result = driver.insghts(5, [3, 1, 0])
     print(result)
 
-    DB.disconnnect()
+    DB.disconnect()
 
 
 

@@ -21,6 +21,6 @@ class Database(object):
         self.curs.execute(query)
         return [data for data in self.curs.fetchall()]
 
-    def disconnnect(self):
+    def disconnect(self):
         self.curs.close()
         self.conn.close()
