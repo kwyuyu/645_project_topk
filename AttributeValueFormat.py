@@ -5,6 +5,9 @@ import copy
 from typing import *
 from abc import *
 
+if TYPE_CHECKING:
+    from CustomizedType import *
+
 
 '''Enum'''
 class AttributeType(enum.Enum):
@@ -64,7 +67,7 @@ class AttributeValueAll(AttributeValue):
 class AttributeValueString(AttributeValue):
     def __init__(self, _value: str):
         super().__init__(AttributeType.STRING)
-        self.value = _value
+        self._value = _value
 
     @AttributeValue.value.setter
     def value(self, val: str):
@@ -81,7 +84,7 @@ class AttributeValueString(AttributeValue):
 class AttributeValueNumber(AttributeValue):
     def __init__(self, _value: Number):
         super().__init__(AttributeType.NUMBER)
-        self.value = _value
+        self._value = _value
 
     @AttributeValue.value.setter
     def value(self, val: Number):

@@ -8,6 +8,7 @@ from abc import *
 
 if TYPE_CHECKING:
     from CustomizedType import *
+    from Utils import *
 
 
 '''Enum'''
