@@ -56,7 +56,7 @@ class Subspace(object):
             return self._subspace[key]
         return Subspace(self._subspace[key])
 
-    def __setitem__(self, key: slice, value: AttributeValue):
+    def __setitem__(self, key: int, value: AttributeValue):
         self._subspace[key] = value
 
     def __iter__(self) -> Generator[AttributeValue]:
@@ -81,8 +81,8 @@ class SiblingGroup(object):
         :type S: Subspace
         :param i:
         :type i: int
-        :param _sibling_attribute:
-        :type _sibling_attribute: list of AttributeValue
+        :param sibling_subspace:
+        :type sibling_subspace: list of AttributeValue
         """
         self.S = S
         self.Di = i
@@ -169,7 +169,7 @@ class ComponentExtractor(object):
         return ComponentExtractor([Extractor(AggregateType.SUM, measurement_attribute)])
 
     @property
-    def Ce(self) -> ComponentExtractor:
+    def Ce(self) -> List[Extractor]:
         return self._Ce
 
     @property
