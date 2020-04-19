@@ -14,7 +14,6 @@ class AttributeType(enum.Enum):
     ALL = 0
     NUMBER = 1
     STRING = 2
-    NONE = 4
 
 
 '''Abstract'''
@@ -40,17 +39,6 @@ class AttributeValue(ABC):
 
     def __repr__(self) -> str:
         return str(self._value)
-
-
-class AttributeValueNone(AttributeValue):
-    def __init__(self):
-        super().__init__(AttributeType.NONE)
-        self._value = None
-
-    def __eq__(self, other: AttributeValue) -> bool:
-        if other.type == AttributeType.NONE:
-            return True
-        return False
 
 
 class AttributeValueAll(AttributeValue):
@@ -110,8 +98,6 @@ class AttributeValueFactory(object):
         elif isinstance(value, str):
             if value == '*':
                 return AttributeValueAll()
-            elif value == 'None':
-                return AttributeValueNone()
             return AttributeValueString(value)
         else:
             return None

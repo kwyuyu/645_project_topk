@@ -28,24 +28,23 @@ class TopKInsight(object):
                                  AggregateType.DELTA_PREV: [AggregateType.RANK, AggregateType.DELTA_AVG, AggregateType.DELTA_PREV]}
 
         self.__DB = DB
-        self.__table_name = None
 
         self.__dom = dict() # Di: list() of AttributeValue
 
-        self.__table_dimension = 0
-        self.__d = 0
-
         self.__depth = 0
 
-        self.__attr_id = []
-        self.__attr_name = []
+        self.__subspace_dimension = 0
+        self.__subspace_attr_ids = []
+        self.__measurement_attr_id = -1
+        self.__subspace_id_by_attr_id = dict()
 
-        self.__D = []
-        self.__M = -1
+        self.__table_name = None
+        self.__table_dimension = 0
+        self.__table_column_names = []
 
 
     '''Main algorithm'''
-    def insghts(self, table_name: str, result_size: int, insight_dimension: List[int]) -> List[ComponentExtractor]:
+    def insights(self, table_name: str, result_size: int, insight_dimension: List[int]) -> List[ComponentExtractor]:
         """
 
         :param table_name:
@@ -57,74 +56,82 @@ class TopKInsight(object):
         :return:
         :rtype: sorted List[ComponentExtractor]
         """
-        self.__generate_dom(table_name)
-        self.__set_measurement(insight_dimension[0])
-        self.__depth = len(insight_dimension)
+        print("Initialization...")
+        self.__initialization(table_name, insight_dimension)
+        print("Initialization done!")
 
         heap = Heap(result_size)
-        possible_Ce = self.__enumerate_all_Ce(self.__depth, insight_dimension)
+        print("Enumerate all Ce...")
+        possible_Ce = self.__enumerate_all_Ce()
+        print("Enumerate all Ce done!")
 
         for Ce in possible_Ce:
-            for i in range(self.__table_dimension):
-                if i != self.__M:
-                    S = Subspace.create_all_start_subspace(self.__table_dimension, self.__M)
-                    self.__enumerate_insight(S, i, Ce, heap)
+            print(Ce)
+            for subspace_id in range(len(self.__subspace_attr_ids)):
+                S = Subspace.create_all_start_subspace(self.__subspace_dimension)
+                self.__enumerate_insight(S, subspace_id, Ce, heap)
 
         return heap.get_nlargest()
 
 
-    def __set_measurement(self, measurement_id: int):
-        self.__M = measurement_id
-        self.__D = self.__attr_id[:measurement_id] + self.__attr_id[measurement_id + 1:]
-
-
-    def __generate_dom(self, table_name: str):
+    def __initialization(self, table_name: str, insight_dimension: List[int]):
         """
 
+        :param insight_dimension:
+        :type insight_dimension: List[int], ex. [measurement, D0, D1, D2, ...]
         :param table_name:
         :type table_name: str
         """
+        self.__depth = len(insight_dimension)
         self.__table_name = table_name
+        self.__table_column_names = self.__get_table_column_names()
+        self.__table_dimension = len(self.__table_column_names)
+        self.__measurement_attr_id = insight_dimension[0]
 
-        # get table attribute name
+        insight_dimension_set = set(insight_dimension)
+        for i, attr_name in enumerate(self.__table_column_names):
+            if i in insight_dimension_set:
+                if i != self.__measurement_attr_id:
+                    self.__subspace_id_by_attr_id[i] = len(self.__subspace_attr_ids)
+                    self.__subspace_attr_ids.append(i)
+
+                self.__dom[i] = list()
+
+                raw_output = self.__DB.execute('select distinct %s from %s;' % (attr_name, self.__table_name))
+                for attr_val in list(map(lambda x: x[0], raw_output)):
+                    self.__dom[i].append(AttributeValueFactory.get_attribute_value(attr_val))
+
+        self.__subspace_dimension = len(self.__subspace_attr_ids)
+
+
+    def __get_table_column_names(self):
         raw_attr = self.__DB.execute(
             'select column_name from information_schema.columns where table_name = \'%s\' order by ordinal_position;' % (
                 self.__table_name))
-        self.__table_dimension = len(raw_attr)
-        self.__d = self.__table_dimension - 1
-
-        for i, attr_tuple in enumerate(raw_attr):
-            self.__attr_id.append(i)
-            self.__attr_name.append(attr_tuple[0])
-
-            self.__dom[i] = list()
-
-            raw_output = self.__DB.execute('select distinct %s from %s;' % (attr_tuple[0], self.__table_name))
-            for raw_tuple in raw_output:
-                self.__dom[i].append(AttributeValueFactory.get_attribute_value(raw_tuple[0]))
+        return list(map(lambda x: x[0], raw_attr))
 
 
-    def __enumerate_insight(self, S: Subspace, i: int, Ce: ComponentExtractor, heap: Heap):
+    def __enumerate_insight(self, S: Subspace, subspace_id: int, Ce: ComponentExtractor, heap: Heap):
         """
 
         :param S:
         :type S: Subspace
-        :param i:
-        :type i: int
+        :param subspace_id:
+        :type subspace_id: int
         :param Ce:
         :type Ce: ComponentExtractor
         :param heap:
         :type heap: Heap
         """
         local_heap = Heap(heap.capacity)
-        SG = self.__generate_sibling_group(S, i)
+        SG = self.__generate_sibling_group(S, subspace_id)
 
         # phase I
         if self.__is_valid(SG, Ce):
             phi = self.__extract_phi(SG, Ce)
             for _, insight_type in enumerate(InsightType):
                 score = self.__imp(SG) * self.__sig(phi, insight_type)
-
+                print(insight_type.name, score)
                 if score > local_heap.get_max().score:
                     new_Ce = Ce.deepcopy()
                     new_Ce.score = score
@@ -135,9 +142,9 @@ class TopKInsight(object):
                     heap.push(new_Ce)
 
         # phase II
-        for attr_val in self.__dom[i]: # Di
+        for attr_val in self.__dom[self.__subspace_attr_ids[subspace_id]]: # Di
             S_ = S[:]
-            S_[i] = attr_val.deepcopy()
+            S_[subspace_id] = attr_val.deepcopy()
             for j in range(len(S_)): # Dj
                 if S_[j].type == AttributeType.ALL:
                     self.__enumerate_insight(S_, j, Ce, heap)
@@ -154,7 +161,7 @@ class TopKInsight(object):
         :rtype: OrderedDict => Subspace: int
         """
         phi = collections.OrderedDict()
-        for attr_val in self.__dom[SG.Di]:
+        for attr_val in self.__dom[self.__subspace_attr_ids[SG.Di]]:
             S_ = SG.S[:]
             S_[SG.Di] = attr_val.deepcopy()
             M_ = self.__recur_extract(S_, self.__depth - 1, Ce)
@@ -180,7 +187,7 @@ class TopKInsight(object):
 
             for attr_val in self.__dom[D_e]:
                 S_v = S_[:]
-                S_v[D_e] = attr_val.deepcopy()
+                S_v[self.__subspace_id_by_attr_id[D_e]] = attr_val.deepcopy()
                 M_v = self.__recur_extract(S_v, level - 1, Ce)
                 phi_level[S_v] = M_v
 
@@ -210,31 +217,28 @@ class TopKInsight(object):
         return result[S]
 
 
-    def __enumerate_all_Ce(self, depth: int, dimension: List[int]) -> List[ComponentExtractor]:
+    def __enumerate_all_Ce(self) -> List[ComponentExtractor]:
         """
 
-        :param depth:
-        :type depth: List[int]
-        :param dimension: the dimension that each Extractor used to measure
-        :type dimension: List[int]
         :return:
         :rtype: List[ComponentExtractor]
         """
-        output = [ComponentExtractor.get_default_Ce(dimension[0])]
+        output = [ComponentExtractor.get_default_Ce(self.__measurement_attr_id)]
 
-        for i in range(1, depth):
+
+        for i, attr_id in enumerate(self.__subspace_attr_ids):
             new_output = []
-            if i == 1:
+            if i == 0:
                 ce = output[0]
                 for aggr_type in AggregateType.get_aggregate_types():
                     ce_ = ce.deepcopy()
-                    ce_.append(Extractor(aggr_type, dimension[i]))
+                    ce_.append(Extractor(aggr_type, attr_id))
                     new_output.append(ce_)
             else:
                 for ce in output:
                     for aggr_type in self.__adj_extractors[ce[-1].aggregate_type]:
                         ce_ = ce.deepcopy()
-                        ce_.append(Extractor(aggr_type, dimension[i]))
+                        ce_.append(Extractor(aggr_type, attr_id))
                         new_output.append(ce_)
 
             output = new_output[:]
@@ -242,23 +246,23 @@ class TopKInsight(object):
         return output
 
 
-    def __generate_sibling_group(self, S: Subspace, i: int) -> SiblingGroup:
+    def __generate_sibling_group(self, S: Subspace, subspace_id: int) -> SiblingGroup:
         """
 
         :param S:
         :type S: Subspace
-        :param i:
-        :type i: int
+        :param subspace_id:
+        :type subspace_id: int
         :return:
         :rtype: SiblingGroup
         """
-        SG = SiblingGroup(S, i)
-        SG.append(Subspace([]))
+        SG = SiblingGroup(S, subspace_id)
+        SG.append(Subspace())
 
         for j, attr_val in enumerate(S):
-            if i == j and S[i].type == AttributeType.ALL:
-                new_SG = SiblingGroup(S, i)
-                for attr_val_k in self.__dom[i]:
+            if subspace_id == j and S[subspace_id].type == AttributeType.ALL:
+                new_SG = SiblingGroup(S, subspace_id)
+                for attr_val_k in self.__dom[self.__subspace_attr_ids[subspace_id]]:
                     for S_ in SG:
                         new_SG.append(S_ + Subspace([attr_val_k.deepcopy()]))
                 SG = new_SG[:]
@@ -280,8 +284,10 @@ class TopKInsight(object):
         :rtype: boolean
         """
         for extractor in Ce:
-            if not (SG.Di == extractor.Dx or SG.S[extractor.Dx].type != AttributeType.ALL):
-                return False
+            if extractor.Dx != self.__measurement_attr_id:
+                subspace_id = self.__subspace_id_by_attr_id[extractor.Dx]
+                if not (SG.Di == subspace_id or SG.S[subspace_id].type != AttributeType.ALL):
+                    return False
         return True
 
 
@@ -294,7 +300,7 @@ class TopKInsight(object):
         :return:
         :rtype: float
         """
-        all_start_subspace = Subspace.create_all_start_subspace(self.__table_dimension, self.__M)
+        all_start_subspace = Subspace.create_all_start_subspace(self.__subspace_dimension)
         sum_all_start_subspace = self.__sum(all_start_subspace)
 
         total = 0
@@ -327,30 +333,32 @@ class TopKInsight(object):
         :rtype: Number
         """
         conditions = []
-        for i, attr_val in enumerate(S):
-            if attr_val.type != AttributeType.ALL and attr_val.type != AttributeType.NONE:
-                conditions.append((i, attr_val.value))
+        for subspace_id, attr_val in enumerate(S):
+            if attr_val.type != AttributeType.ALL:
+                conditions.append((subspace_id, attr_val.value))
 
-        query = "select sum(%s) from %s" % (self.__attr_name[self.__M], self.__table_name)
+        query = "select sum(%s) from %s" % (self.__table_column_names[self.__measurement_attr_id], self.__table_name)
 
         if len(conditions) > 0:
             query += " where"
-            for i , (attr_id, attr_exact_val) in enumerate(conditions):
+            for i , (subspace_id, attr_exact_val) in enumerate(conditions):
+                attr_name = self.__table_column_names[self.__subspace_attr_ids[subspace_id]]
+
                 if i == 0:
                     if isinstance(attr_exact_val, str):
-                        query += " %s = '%s'" % (self.__attr_name[attr_id], attr_exact_val.replace("'", "''"))
+                        query += " %s = '%s'" % (attr_name, attr_exact_val.replace("'", "''"))
                     else:
-                        query += " %s = %s" % (self.__attr_name[attr_id], str(attr_exact_val))
+                        query += " %s = %s" % (attr_name, str(attr_exact_val))
                 else:
                     if isinstance(attr_exact_val, str):
-                        query += " and %s = '%s'" % (self.__attr_name[attr_id], attr_exact_val.replace("'", "''"))
+                        query += " and %s = '%s'" % (attr_name, attr_exact_val.replace("'", "''"))
                     else:
-                        query += " and %s = %s" % (self.__attr_name[attr_id], str(attr_exact_val))
+                        query += " and %s = %s" % (attr_name, str(attr_exact_val))
 
         group_by  = []
-        for i in self.__D:
-            if S[i].type != AttributeType.ALL:
-                group_by.append(self.__attr_name[i])
+        for subspace_id in range(self.__subspace_dimension):
+            if S[subspace_id].type != AttributeType.ALL:
+                group_by.append(self.__table_column_names[self.__subspace_attr_ids[subspace_id]])
 
         if len(group_by) > 0:
             query += " group by"

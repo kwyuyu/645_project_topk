@@ -24,9 +24,8 @@ class Subspace(object):
             self._subspace = _subspace
 
     @staticmethod
-    def create_all_start_subspace(size: int, measurement_dimension: int) -> Subspace:
+    def create_all_start_subspace(size: int) -> Subspace:
         subspace = [AttributeValueFactory.get_attribute_value('*')] * size
-        subspace[measurement_dimension] = AttributeValueFactory.get_attribute_value('None')
         return Subspace(subspace)
 
     @property
@@ -74,18 +73,18 @@ class Subspace(object):
 
 
 class SiblingGroup(object):
-    def __init__(self, S: Subspace, i: int, sibling_subspace: List[Subspace] = None):
+    def __init__(self, S: Subspace, subspace_id: int, sibling_subspace: List[Subspace] = None):
         """
         SG(S, Di): a list of Subspace
         :param S:
         :type S: Subspace
-        :param i:
-        :type i: int
+        :param subspace_id:
+        :type subspace_id: int
         :param sibling_subspace:
         :type sibling_subspace: list of AttributeValue
         """
         self.S = S
-        self.Di = i
+        self.Di = subspace_id
 
         if sibling_subspace is None:
             self._sibling_subspace = []
@@ -122,16 +121,16 @@ class SiblingGroup(object):
 
 
 class Extractor(object):
-    def __init__(self, aggregate_function: AggregateType, measure_attribute: int):
+    def __init__(self, aggregate_function: AggregateType, measure_attribute_id: int):
         """
         Ce
         :param aggregate_function:
         :type aggregate_function: AggregateType
-        :param measure_attribute: attribute dimension (index)
-        :type measure_attribute: int
+        :param measure_attribute_id: attribute dimension (index)
+        :type measure_attribute_id: int
         """
         self.aggregate_function = aggregate_function
-        self.measure_attribute = measure_attribute
+        self.measure_attribute_id = measure_attribute_id
 
     @property
     def aggregate_type(self) -> AggregateType:
@@ -139,13 +138,13 @@ class Extractor(object):
 
     @property
     def Dx(self) -> int:
-        return self.measure_attribute
+        return self.measure_attribute_id
 
     def deepcopy(self) -> Extractor:
         return copy.deepcopy(self)
 
     def __repr__(self) -> str:
-        return str((self.aggregate_function.name, self.measure_attribute))
+        return str((self.aggregate_function.name, self.measure_attribute_id))
 
 
 class ComponentExtractor(object):
@@ -224,4 +223,7 @@ class ComponentExtractor(object):
             yield extractor
 
     def __repr__(self) -> str:
-        return str((self.score, self.insight_type.name, self.SG.S, self._Ce))
+        return str((self.score,
+                    self.insight_type.name if self.insight_type else None,
+                    self.SG.S if self.SG else None,
+                    self._Ce))
