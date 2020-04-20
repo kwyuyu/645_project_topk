@@ -63,3 +63,24 @@ from (select a_pa.*, p.name as paper_name, p.venue as venue_id, p.pages, p.url
 from (select a.id as author_id, a.name as author_name, pa.paperid as paper_id
 from authors as a join paperauths as pa on a.id = pa.authid) as a_pa join papers as p on a_pa.paper_id = p.id) as a_pa_p
 join venue as v on a_pa_p.venue_id = v.id);
+
+
+-- create score table
+create table paper_score as (
+    with author_score(author_id, author_s) as (
+        select authid, count(distinct paperid)
+        from paperauths
+        group by authid
+    ),
+    paper_score_temp(paper_id, paper_s) as (
+        select pr.paperid, sum(a_s.author_s)
+        from author_score as a_s, paperauths as pr
+        where pr.authid = a_s.author_id
+        group by pr.paperid
+    )
+
+    select p.id as paper_id, p_s.paper_s, v.year, v.type as venue_type
+    from paper_score_temp as p_s, papers as p, venue as v
+    where p_s.paper_id = p.id and p.venue = v.id
+);
+
