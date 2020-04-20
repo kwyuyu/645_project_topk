@@ -15,6 +15,21 @@ if TYPE_CHECKING:
     from CustomizedType import *
 
 
+def timer(method_name):
+    def decorator(func):
+        import functools
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            import time
+            print('start: %s...' % (method_name))
+            start = time.time()
+            result = func(*args, **kwargs)
+            print('complete: %s... %f sec\n' % (method_name, time.time() - start))
+            return result
+        return wrapper
+    return decorator
+
+
 class TopKInsight(object):
     def __init__(self, DB: Database):
         """
@@ -36,7 +51,6 @@ class TopKInsight(object):
         self.__subspace_dimension = 0
         self.__subspace_attr_ids = []
         self.__measurement_attr_id = -1
-        self.__subspace_id_by_attr_id = dict()
 
         self.__table_name = None
         self.__table_dimension = 0
@@ -56,17 +70,12 @@ class TopKInsight(object):
         :return:
         :rtype: sorted List[ComponentExtractor]
         """
-        print("Initialization...")
         self.__initialization(table_name, insight_dimension)
-        print("Initialization done!")
 
         heap = Heap(result_size)
-        print("Enumerate all Ce...")
         possible_Ce = self.__enumerate_all_Ce()
-        print("Enumerate all Ce done!")
 
         for Ce in possible_Ce:
-            print(Ce)
             for subspace_id in range(len(self.__subspace_attr_ids)):
                 S = Subspace.create_all_start_subspace(self.__subspace_dimension)
                 self.__enumerate_insight(S, subspace_id, Ce, heap)
@@ -74,6 +83,7 @@ class TopKInsight(object):
         return heap.get_nlargest()
 
 
+    @timer('initialization')
     def __initialization(self, table_name: str, insight_dimension: List[int]):
         """
 
@@ -86,22 +96,16 @@ class TopKInsight(object):
         self.__table_name = table_name
         self.__table_column_names = self.__get_table_column_names()
         self.__table_dimension = len(self.__table_column_names)
+        self.__subspace_dimension = len(insight_dimension) - 1
         self.__measurement_attr_id = insight_dimension[0]
 
-        insight_dimension_set = set(insight_dimension)
-        for i, attr_name in enumerate(self.__table_column_names):
-            if i in insight_dimension_set:
-                if i != self.__measurement_attr_id:
-                    self.__subspace_id_by_attr_id[i] = len(self.__subspace_attr_ids)
-                    self.__subspace_attr_ids.append(i)
-
-                self.__dom[i] = list()
-
-                raw_output = self.__DB.execute('select distinct %s from %s;' % (attr_name, self.__table_name))
+        for subspace_attr_id in insight_dimension[1:]:
+            self.__subspace_attr_ids.append(subspace_attr_id)
+            if subspace_attr_id not in self.__dom:
+                self.__dom[subspace_attr_id] = list()
+                raw_output = self.__DB.execute('select distinct %s from %s;' % (self.__table_column_names[subspace_attr_id], self.__table_name))
                 for attr_val in list(map(lambda x: x[0], raw_output)):
-                    self.__dom[i].append(AttributeValueFactory.get_attribute_value(attr_val))
-
-        self.__subspace_dimension = len(self.__subspace_attr_ids)
+                    self.__dom[subspace_attr_id].append(AttributeValueFactory.get_attribute_value(attr_val))
 
 
     def __get_table_column_names(self):
@@ -131,7 +135,6 @@ class TopKInsight(object):
             phi = self.__extract_phi(SG, Ce)
             for _, insight_type in enumerate(InsightType):
                 score = self.__imp(SG) * self.__sig(phi, insight_type)
-                print(insight_type.name, score)
                 if score > local_heap.get_max().score:
                     new_Ce = Ce.deepcopy()
                     new_Ce.score = score
@@ -183,15 +186,15 @@ class TopKInsight(object):
         """
         if level > 1:
             phi_level = collections.OrderedDict()
-            D_e = Ce[level].Dx
+            D_e, subspace_id = Ce[level].Dx, Ce[level].subspace_id
 
             for attr_val in self.__dom[D_e]:
                 S_v = S_[:]
-                S_v[self.__subspace_id_by_attr_id[D_e]] = attr_val.deepcopy()
+                S_v[subspace_id] = attr_val.deepcopy()
                 M_v = self.__recur_extract(S_v, level - 1, Ce)
                 phi_level[S_v] = M_v
 
-            aggregate_type = Ce[level].aggregate_function
+            aggregate_type = Ce[level].aggregate_type
             M_ = self.__measurement(aggregate_type, phi_level, S_)
 
         else:
@@ -217,6 +220,7 @@ class TopKInsight(object):
         return result[S]
 
 
+    @timer('enumerate all Ce')
     def __enumerate_all_Ce(self) -> List[ComponentExtractor]:
         """
 
@@ -225,20 +229,19 @@ class TopKInsight(object):
         """
         output = [ComponentExtractor.get_default_Ce(self.__measurement_attr_id)]
 
-
         for i, attr_id in enumerate(self.__subspace_attr_ids):
             new_output = []
             if i == 0:
                 ce = output[0]
                 for aggr_type in AggregateType.get_aggregate_types():
                     ce_ = ce.deepcopy()
-                    ce_.append(Extractor(aggr_type, attr_id))
+                    ce_.append(Extractor(aggr_type, attr_id, i))
                     new_output.append(ce_)
             else:
                 for ce in output:
                     for aggr_type in self.__adj_extractors[ce[-1].aggregate_type]:
                         ce_ = ce.deepcopy()
-                        ce_.append(Extractor(aggr_type, attr_id))
+                        ce_.append(Extractor(aggr_type, attr_id, i))
                         new_output.append(ce_)
 
             output = new_output[:]
@@ -285,8 +288,7 @@ class TopKInsight(object):
         """
         for extractor in Ce:
             if extractor.Dx != self.__measurement_attr_id:
-                subspace_id = self.__subspace_id_by_attr_id[extractor.Dx]
-                if not (SG.Di == subspace_id or SG.S[subspace_id].type != AttributeType.ALL):
+                if not (SG.Di == extractor.subspace_id or SG.S[extractor.subspace_id].type != AttributeType.ALL):
                     return False
         return True
 
