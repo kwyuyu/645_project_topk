@@ -51,21 +51,26 @@ class PointScoreCalculator(ScoreCalculator):
             3. Model the prediction error by Gaussian distribution (N(mu, delta))
         
         Special Cases:
-            1. Prediction perfectly match y => mu ~ std ~ 0, the error distribution is a horizontal line
-            2. Prediction perfectly match y[1:] but not y[0] => mu ~ 0 = std, no error distribution
+            1. Data points are not enough for prediction
+            2. Prediction perfectly match y => mu ~ std ~ 0, the error distribution is a horizontal line
+            3. Prediction perfectly match y[1:] but not y[0] => mu ~ 0 = std, no error distribution
         """
         phi_val = list(phi.values())
+        # Case 1: too few data points
+        if len(phi_val) < 4: return 0
+
         y = sorted(phi_val, reverse=True)
         x = list(range(1, len(y)+1))
         try:
             param_opt, pcov = curve_fit(self.powerlaw, x[1:], y[1:], maxfev=3000)
         except:
             import pdb;pdb.set_trace()
+            return 0
         errors = y - self.powerlaw(x, *param_opt)
-        # Case 1: If the prediction perfectly match, the error will be too small but not equals to zero.
+        # Case 2: If the prediction perfectly match, the error will be too small but not equals to zero.
         if errors[0] < math.exp(-9): return 0
         mu, std = norm.fit(errors[1:])
-        # Case 2
+        # Case 3
         if std < math.exp(-9): return 1
 
         sig_score = norm(mu, std).cdf(errors[0])
