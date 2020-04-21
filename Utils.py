@@ -193,7 +193,7 @@ class ComponentExtractor(object):
     @score.setter
     def score(self, _score: Number):
         if not isinstance(_score, int) and not isinstance(_score, float):
-            raise TypeError('score should be number')
+            raise TypeError(f'score should be number. input = {_score}, {type(_score)}')
         self.__score = _score
 
     @property
