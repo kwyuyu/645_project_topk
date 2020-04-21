@@ -241,5 +241,4 @@ class ComponentExtractor(object):
         return str((self.score,
                     self.insight_type.name if self.insight_type else None,
                     self.SG.S if self.SG else None,
-                    self.SG if self.SG else None,
                     self.__Ce))
