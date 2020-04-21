@@ -129,12 +129,15 @@ class TopKInsight(object):
         """
         local_heap = Heap(heap.capacity)
         SG = self.__generate_sibling_group(S, subspace_id)
+        imp = float(self.__imp(SG))
+        if imp == 0:
+            return
 
         # phase I
         if self.__is_valid(SG, Ce):
             phi = self.__extract_phi(SG, Ce)
             for _, insight_type in enumerate(InsightType):
-                score = self.__imp(SG) * self.__sig(phi, insight_type)
+                score = imp * self.__sig(phi, insight_type)
                 if score > local_heap.get_max().score:
                     new_Ce = Ce.deepcopy()
                     new_Ce.score = score
