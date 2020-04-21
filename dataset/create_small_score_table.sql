@@ -2,11 +2,6 @@
 -- except based on the small testing tables.
 
 DROP TABLE IF EXISTS s_paper_score cascade;
-DROP TABLE IF EXISTS s_paperauths cascade;
-
-CREATE TABLE s_paperauths AS
-    SELECT * FROM paperauths 
-    OFFSET floor(random()*8997872) LIMIT 1000;
 
 CREATE TABLE s_paper_score AS (
     with author_score(author_id, author_s) as (

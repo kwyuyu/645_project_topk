@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import collections
+import time
 from typing import *
 
 from Heap import *
@@ -75,10 +76,15 @@ class TopKInsight(object):
         heap = Heap(result_size)
         possible_Ce = self.__enumerate_all_Ce()
 
+        print('Number of Ce:', len(possible_Ce))
+
         for Ce in possible_Ce:
+            start = time.time()
+            print('start:', Ce)
             for subspace_id in range(len(self.__subspace_attr_ids)):
                 S = Subspace.create_all_start_subspace(self.__subspace_dimension)
                 self.__enumerate_insight(S, subspace_id, Ce, heap)
+            print('complete...', time.time() - start, 'sec')
 
         return heap.get_nlargest()
 
@@ -129,7 +135,7 @@ class TopKInsight(object):
         """
         local_heap = Heap(heap.capacity)
         SG = self.__generate_sibling_group(S, subspace_id)
-        imp = float(self.__imp(SG))
+        imp = self.__imp(SG)
         if imp == 0:
             return
 
@@ -308,7 +314,7 @@ class TopKInsight(object):
         all_start_subspace = Subspace.create_all_start_subspace(self.__subspace_dimension)
         sum_all_start_subspace = self.__sum(all_start_subspace)
 
-        total = 0
+        total = 0.0
         for S_ in SG:
             total += (self.__sum(S_) / sum_all_start_subspace)
         return total
@@ -376,6 +382,6 @@ class TopKInsight(object):
         query += ";"
         result = self.__DB.execute(query)
 
-        return result[0][0] if len(result) > 0 else 0
+        return float(result[0][0]) if len(result) > 0 else 0.0
 
 
