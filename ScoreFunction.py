@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import random
 import enum
+import math
 import numpy as np
 from scipy import stats
 from scipy.stats import powerlaw
@@ -37,72 +39,63 @@ class ScoreCalculator(ABC):
         raise NotImplemented('Need to implement')
 
 
-# TODO: point sig
 class PointScoreCalculator(ScoreCalculator):
     def powerlaw(self, x, shape, loc, scale):
         return scale * x**shape + loc
 
     def sig(self, phi: OrderedDict[Subspace, Number]) -> Number:
         """
-        1. sort numbers
-        2. fit numbers to power-law distribution
-        3. model the prediction error by Gaussian distribution (N(mu, delta))
+        Algorithm:
+            1. Sort numbers
+            2. Fit numbers to power-law distribution
+            3. Model the prediction error by Gaussian distribution (N(mu, delta))
+        
+        Special Cases:
+            1. Data points are not enough for prediction
+            2. Prediction perfectly match y => mu ~ std ~ 0, the error distribution is a horizontal line
+            3. Prediction perfectly match y[1:] but not y[0] => mu ~ 0 = std, no error distribution
         """
-        # import random
-        # return random.random()
-
         phi_val = list(phi.values())
+        # Case 1: too few data points
+        if len(phi_val) < 4: return 0
+
         y = sorted(phi_val, reverse=True)
-        n = len(y)
-        x = list(range(1, n+1))
-        param_opt, pcov = curve_fit(self.powerlaw, x[1:], y[1:], maxfev=3000)
+        x = list(range(1, len(y)+1))
+        try:
+            param_opt, pcov = curve_fit(self.powerlaw, x[1:], y[1:], maxfev=3000)
+        except:
+            import pdb;pdb.set_trace()
+            return 0
         errors = y - self.powerlaw(x, *param_opt)
+        # Case 2: If the prediction perfectly match, the error will be too small but not equals to zero.
+        if errors[0] < math.exp(-9): return 0
         mu, std = norm.fit(errors[1:])
-        return norm(mu, std).cdf(errors[0])
+        # Case 3
+        if std < math.exp(-9): return 1
 
-        # y = np.array(sorted(list(set(phi.values())), reverse=True)).reshape(-1, 1)
-        # n = len(y)
-        # x = np.array(list(range(1, n + 1))).reshape(-1, 1)
-        # param_opt, pcov = curve_fit(self.powerlaw, x[1:], y[1:], maxfev=3000)
-        # errors = y - self.powerlaw(x, *param_opt)
-        # mu, std = norm.fit(errors[1:])
-        # return norm(mu, std).cdf(errors[0])
+        sig_score = norm(mu, std).cdf(errors[0])
+        return sig_score
 
 
-# TODO: shape sig
 class ShapeScoreCalculator(ScoreCalculator):
     def __init__(self):
         self.lr = linear_model.LinearRegression()
 
     def sig(self, phi: OrderedDict[Subspace, Number]) -> Number:
         '''
-        1. fit numbers to a line by linear regression
-        2. compute slope m and the goodness-of-fit r^2
-        3. model the slopes by logistic distribution
+        Algorithm:
+            1. Fit numbers to a line by linear regression
+            2. Compute slope m and the goodness-of-fit r^2
+            3. Model the slopes by logistic distribution
         '''
-        # import random
-        # return random.random()
-
-        # phi_val = list(phi.values())
-        # y = phi_val[:]
-        # n = len(y)
-        # x = list(range(1, n+1))
-        # reg = self.lr.fit(x, y)
-        # r2 = reg.score(x, y)
-        # errors = y - reg.predict(x)
-        # mu, std = logistic.fit(errors[1:])
-        # return r2 * logistic(mu, std).cdf(errors[0])
-
-        phi_val = list(phi.values())
-        y = np.array(phi_val).reshape(-1, 1)
-        n = len(y)
-        x = np.array(list(range(1, n + 1))).reshape(-1, 1)
+        y = np.array(list(phi.values()))
+        x = np.arange(1, len(y)+1).reshape(-1, 1)
         reg = self.lr.fit(x, y)
         r2 = reg.score(x, y)
         errors = y - reg.predict(x)
         mu, std = logistic.fit(errors[1:])
-        score = r2 * logistic(mu, std).cdf(errors[0])
-        return score[0]
+        sig_score = r2 * logistic(mu, std).cdf(errors[0])
+        return sig_score
 
 
 '''Factory'''

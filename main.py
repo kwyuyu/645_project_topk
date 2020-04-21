@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import warnings
+import argparse
 
 from DatabaseOperation import *
 from Algorithm import *
@@ -26,17 +27,23 @@ def display_results(results):
         print(i+1, result)
 
 
-def main():
+def main(args):
     DB = Database()
     DB.connect('localhost', 5432, 'postgres', 'postgres')
 
     driver = TopKInsight(DB)
 
-    results = driver.insights('sales', 10, [2, 0, 1])
+    results = driver.insights(args.table, args.k, args.insight_dim)
     display_results(results)
 
     DB.disconnect()
 
 
 if __name__ == '__main__':
-    main()
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--table', default='sales', type=str)
+    parser.add_argument('--k', default=10, type=int, help='top K result')
+    parser.add_argument('--insight_dim', default=[2,0,1], nargs="+", type=int)
+    args = parser.parse_args()
+
+    main(args)
