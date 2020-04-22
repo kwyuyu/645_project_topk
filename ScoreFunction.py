@@ -44,7 +44,7 @@ class PointScoreCalculator(ScoreCalculator):
         return scale * x**shape + loc
 
     def cubicEq(self, x, a, b, c, d):
-        return a * x ** 3 + b * x ** 2 + c * x + d
+        return a * np.power(x, 3) + b * np.power(x, 2) + np.multiply(c, x) + d
 
     def sig(self, phi: OrderedDict[Subspace, Number]) -> Number:
         """
@@ -75,11 +75,7 @@ class PointScoreCalculator(ScoreCalculator):
             except:
                 import ipdb;ipdb.set_trace()
 
-        try:
-            errors = y - func(x, *param_opt)
-        except: 
-            print(y)
-            #import ipdb;ipdb.set_trace()
+        errors = y - func(x, *param_opt)
         # Case 2: If the prediction perfectly match, the error will be too small but not equals to zero.
         if errors[0] < math.exp(-9): return 0.0
         mu, std = norm.fit(errors[1:])
