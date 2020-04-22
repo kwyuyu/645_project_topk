@@ -76,7 +76,7 @@ class TopKInsight(object):
 
         self.S = Subspace.create_all_start_subspace(self.__subspace_dimension)
         self.sum_S = self.__sum(self.S)
-        self.sum_SG_dic = {}
+        self.sum_S_dic = {}
 
         for subspace_attr_id in insight_dimension[1:]:
             self.__subspace_attr_ids.append(subspace_attr_id)
@@ -341,11 +341,11 @@ class TopKInsight(object):
 
         total = 0.0
         for S_ in SG:
-            if S_ in self.sum_SG_dic:
-                sum_S_ = self.sum_SG_dic[S_]
+            if S_ in self.sum_S_dic:
+                sum_S_ = self.sum_S_dic[S_]
             else:
                 sum_S_ = self.__sum(S_)
-                self.sum_SG_dic[S_] = sum_S_
+                self.sum_S_dic[S_] = sum_S_
             total +=  sum_S_ / sum_all_star_subspace
         return total
 
