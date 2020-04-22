@@ -106,15 +106,34 @@ class TopKInsight(object):
         print(possible_Ce)
         print('Number of Ce:', len(possible_Ce), '\n')
 
-        for i, Ce in enumerate(possible_Ce):
+        for Ce_idx, Ce in enumerate(possible_Ce):
             start = time.time()
-            print(f'Start Ce {i}: {Ce}')
+            print(f'Start Ce {Ce_idx}: {Ce}')
             for subspace_id in range(len(self.__subspace_attr_ids)):
-                self.__enumerate_insight(S, subspace_id, Ce, heap, verbose)
-            print(f'Complete {i}: Time Elapse {time.time() - start} sec')
+                print(f'\tStart subspace id {subspace_id}')
+                self.__enumerate_insight(S, subspace_id, Ce, heap, verbose=verbose)
+                print(f'\tComplete subspace id {subspace_id}: Time Elapse {time.time() - start} sec')
+
+            print(f'Complete Ce {Ce_idx}: Time Elapse {time.time() - start} sec')
 
         return heap.get_nlargest()
 
+
+    def test_insights(self, table_name, result_size, insight_dimension, ssid=0, index=[[],1,0]):
+        self.__initialization(table_name, insight_dimension)
+        S = Subspace.create_all_start_subspace(self.__subspace_dimension)
+
+        heap = Heap(result_size)
+        possible_Ce = self.__enumerate_all_Ce()
+
+        print('Ce:', possible_Ce[0])
+        Ce = possible_Ce[0]
+        attr_val = self.__dom[self.__subspace_attr_ids[index[1]]][index[2]]
+        S_ = S[:]
+        S_[index[1]] = attr_val.deepcopy()
+        self.__enumerate_insight(S_, subspace_id, Ce, heap, verbose=True)
+
+        return heap.get_nlargest()
 
     def __get_table_column_names(self):
         raw_attr = self.__DB.execute(
@@ -123,7 +142,7 @@ class TopKInsight(object):
         return list(map(lambda x: x[0], raw_attr))
 
 
-    def __enumerate_insight(self, S: Subspace, subspace_id: int, Ce: ComponentExtractor, heap: Heap, index=-1, verbose=False):
+    def __enumerate_insight(self, S: Subspace, subspace_id: int, Ce: ComponentExtractor, heap: Heap, index=[], verbose=False):
         """
 
         :param S:
@@ -138,8 +157,6 @@ class TopKInsight(object):
         local_heap = Heap(heap.capacity)
         SG = self.__generate_sibling_group(S, subspace_id)
         imp = self.__imp(SG)
-        if imp == 0:
-            return
 
         # phase I
         if self.__is_valid(SG, Ce):
@@ -147,6 +164,8 @@ class TopKInsight(object):
                 print(SG, subspace_id, index)
             phi = self.__extract_phi(SG, Ce)
             for _, insight_type in enumerate(InsightType):
+                if imp == 0:
+                    continue
                 score = imp * self.__sig(phi, insight_type)
                 if score > local_heap.get_max().score:
                     new_Ce = Ce.deepcopy()
@@ -163,7 +182,7 @@ class TopKInsight(object):
             S_[subspace_id] = attr_val.deepcopy()
             for j in range(len(S_)): # Dj
                 if S_[j].type == AttributeType.ALL:
-                    self.__enumerate_insight(S_, j, Ce, heap, index=aid, verbose=True)
+                    self.__enumerate_insight(S_, j, Ce, heap, index=[index, subspace_id, aid], verbose=verbose)
 
 
     def __extract_phi(self, SG: SiblingGroup, Ce: ComponentExtractor) -> OrderedDict[Subspace, Number]:
@@ -388,4 +407,15 @@ class TopKInsight(object):
 
         return float(result[0][0]) if len(result) > 0 else 0.0
 
+    
+if __name__ == '__main__':
+    DB = Database()
+    DB.connect('localhost', 5432, 'postgres', 'postgres')
 
+    driver = TopKInsight(DB)
+
+    results = driver.test_insights('s_paper_score', 5, [0, 1, 2], ssid=0, index=[[], 1, 0])
+
+    display_results(results)
+
+    DB.disconnect()
