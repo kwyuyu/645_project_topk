@@ -74,6 +74,10 @@ class TopKInsight(object):
         self.__subspace_dimension = len(insight_dimension) - 1
         self.__measurement_attr_id = insight_dimension[0]
 
+        self.S = Subspace.create_all_start_subspace(self.__subspace_dimension)
+        self.sum_S = self.__sum(self.S)
+        self.sum_SG_dic = {}
+
         for subspace_attr_id in insight_dimension[1:]:
             self.__subspace_attr_ids.append(subspace_attr_id)
             if subspace_attr_id not in self.__dom:
@@ -97,7 +101,6 @@ class TopKInsight(object):
         :rtype: sorted List[ComponentExtractor]
         """
         self.__initialization(table_name, insight_dimension)
-        S = Subspace.create_all_start_subspace(self.__subspace_dimension)
 
         heap = Heap(result_size)
         possible_Ce = self.__enumerate_all_Ce()
@@ -111,7 +114,7 @@ class TopKInsight(object):
             print(f'Start Ce {Ce_idx}: {Ce}')
             for subspace_id in range(len(self.__subspace_attr_ids)):
                 print(f'\tStart subspace id {subspace_id}')
-                self.__enumerate_insight(S, subspace_id, Ce, heap, verbose=verbose)
+                self.__enumerate_insight(self.S, subspace_id, Ce, heap, verbose=verbose)
                 print(f'\tComplete subspace id {subspace_id}: Time Elapse {time.time() - start} sec')
 
             print(f'Complete Ce {Ce_idx}: Time Elapse {time.time() - start} sec')
@@ -121,7 +124,6 @@ class TopKInsight(object):
 
     def test_insights(self, table_name, result_size, insight_dimension, ssid=0, index=[[],1,0]):
         self.__initialization(table_name, insight_dimension)
-        S = Subspace.create_all_start_subspace(self.__subspace_dimension)
 
         heap = Heap(result_size)
         possible_Ce = self.__enumerate_all_Ce()
@@ -129,11 +131,12 @@ class TopKInsight(object):
         print('Ce:', possible_Ce[0])
         Ce = possible_Ce[0]
         attr_val = self.__dom[self.__subspace_attr_ids[index[1]]][index[2]]
-        S_ = S[:]
+        S_ = self.S[:]
         S_[index[1]] = attr_val.deepcopy()
         self.__enumerate_insight(S_, subspace_id, Ce, heap, verbose=True)
 
         return heap.get_nlargest()
+
 
     def __get_table_column_names(self):
         raw_attr = self.__DB.execute(
@@ -334,12 +337,16 @@ class TopKInsight(object):
         :return:
         :rtype: float
         """
-        all_start_subspace = Subspace.create_all_start_subspace(self.__subspace_dimension)
-        sum_all_start_subspace = self.__sum(all_start_subspace)
+        sum_all_star_subspace = self.sum_S
 
         total = 0.0
         for S_ in SG:
-            total += (self.__sum(S_) / sum_all_start_subspace)
+            if S_ in self.sum_SG_dic:
+                sum_S_ = self.sum_SG_dic[S_]
+            else:
+                sum_S_ = self.__sum(S_)
+                self.sum_SG_dic[S_] = sum_S_
+            total +=  sum_S_ / sum_all_star_subspace
         return total
 
 
