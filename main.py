@@ -33,7 +33,7 @@ def main(args):
 
     driver = TopKInsight(DB)
 
-    results = driver.insights(args.table, args.k, args.insight_dim)
+    results = driver.insights(args.table, args.k, args.insight_dim, args.verbose)
     display_results(results)
 
     DB.disconnect()
@@ -44,6 +44,7 @@ if __name__ == '__main__':
     parser.add_argument('--table', default='sales', type=str)
     parser.add_argument('--k', default=10, type=int, help='top K result')
     parser.add_argument('--insight_dim', default=[2,0,1], nargs="+", type=int)
+    parser.add_argument('--verbose', action='store_true')
     args = parser.parse_args()
 
     main(args)

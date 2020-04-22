@@ -58,37 +58,6 @@ class TopKInsight(object):
         self.__table_column_names = []
 
 
-    '''Main algorithm'''
-    def insights(self, table_name: str, result_size: int, insight_dimension: List[int]) -> List[ComponentExtractor]:
-        """
-
-        :param table_name:
-        :type table_name: str
-        :param result_size:
-        :type result_size: int
-        :param insight_dimension: the dimension that each Extractor used to measure.
-        :type insight_dimension: List[int], ex. [measurement, D0, D1, D2, ...]
-        :return:
-        :rtype: sorted List[ComponentExtractor]
-        """
-        self.__initialization(table_name, insight_dimension)
-
-        heap = Heap(result_size)
-        possible_Ce = self.__enumerate_all_Ce()
-
-        print('Number of Ce:', len(possible_Ce))
-
-        for Ce in possible_Ce:
-            start = time.time()
-            print('start:', Ce)
-            for subspace_id in range(len(self.__subspace_attr_ids)):
-                S = Subspace.create_all_start_subspace(self.__subspace_dimension)
-                self.__enumerate_insight(S, subspace_id, Ce, heap)
-            print('complete...', time.time() - start, 'sec')
-
-        return heap.get_nlargest()
-
-
     @timer('initialization')
     def __initialization(self, table_name: str, insight_dimension: List[int]):
         """
@@ -114,6 +83,39 @@ class TopKInsight(object):
                     self.__dom[subspace_attr_id].append(AttributeValueFactory.get_attribute_value(attr_val))
 
 
+    '''Main algorithm'''
+    def insights(self, table_name: str, result_size: int, insight_dimension: List[int], verbose=False) -> List[ComponentExtractor]:
+        """
+
+        :param table_name:
+        :type table_name: str
+        :param result_size:
+        :type result_size: int
+        :param insight_dimension: the dimension that each Extractor used to measure.
+        :type insight_dimension: List[int], ex. [measurement, D0, D1, D2, ...]
+        :return:
+        :rtype: sorted List[ComponentExtractor]
+        """
+        self.__initialization(table_name, insight_dimension)
+        S = Subspace.create_all_start_subspace(self.__subspace_dimension)
+
+        heap = Heap(result_size)
+        possible_Ce = self.__enumerate_all_Ce()
+
+        print('Possible Ce:')
+        print(possible_Ce)
+        print('Number of Ce:', len(possible_Ce), '\n')
+
+        for i, Ce in enumerate(possible_Ce):
+            start = time.time()
+            print(f'Start Ce {i}: {Ce}')
+            for subspace_id in range(len(self.__subspace_attr_ids)):
+                self.__enumerate_insight(S, subspace_id, Ce, heap, verbose)
+            print(f'Complete {i}: Time Elapse {time.time() - start} sec')
+
+        return heap.get_nlargest()
+
+
     def __get_table_column_names(self):
         raw_attr = self.__DB.execute(
             'select column_name from information_schema.columns where table_name = \'%s\' order by ordinal_position;' % (
@@ -121,7 +123,7 @@ class TopKInsight(object):
         return list(map(lambda x: x[0], raw_attr))
 
 
-    def __enumerate_insight(self, S: Subspace, subspace_id: int, Ce: ComponentExtractor, heap: Heap):
+    def __enumerate_insight(self, S: Subspace, subspace_id: int, Ce: ComponentExtractor, heap: Heap, index=-1, verbose=False):
         """
 
         :param S:
@@ -141,6 +143,8 @@ class TopKInsight(object):
 
         # phase I
         if self.__is_valid(SG, Ce):
+            if verbose:
+                print(SG, subspace_id, index)
             phi = self.__extract_phi(SG, Ce)
             for _, insight_type in enumerate(InsightType):
                 score = imp * self.__sig(phi, insight_type)
@@ -154,12 +158,12 @@ class TopKInsight(object):
                     heap.push(new_Ce)
 
         # phase II
-        for attr_val in self.__dom[self.__subspace_attr_ids[subspace_id]]: # Di
+        for aid, attr_val in enumerate(self.__dom[self.__subspace_attr_ids[subspace_id]]): # Di
             S_ = S[:]
             S_[subspace_id] = attr_val.deepcopy()
             for j in range(len(S_)): # Dj
                 if S_[j].type == AttributeType.ALL:
-                    self.__enumerate_insight(S_, j, Ce, heap)
+                    self.__enumerate_insight(S_, j, Ce, heap, index=aid, verbose=True)
 
 
     def __extract_phi(self, SG: SiblingGroup, Ce: ComponentExtractor) -> OrderedDict[Subspace, Number]:
