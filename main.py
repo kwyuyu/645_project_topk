@@ -36,7 +36,6 @@ def main(args):
     results = driver.insights(args.table, args.k, args.insight_dim, args.verbose)
     display_results(results)
 
-    DB.disconnect()
 
 
 if __name__ == '__main__':
@@ -46,5 +45,10 @@ if __name__ == '__main__':
     parser.add_argument('--insight_dim', default=[2,0,1], nargs="+", type=int)
     parser.add_argument('--verbose', action='store_true')
     args = parser.parse_args()
+
+    args.table = 'paper_score_1000'
+    args.k = 5
+    args.insight_dim = [0, 1]
+    args.verbose = False
 
     main(args)

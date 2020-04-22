@@ -53,9 +53,8 @@ class TopKInsight(object):
         self.__subspace_attr_ids = []
         self.__measurement_attr_id = -1
 
-        self.S = None
-        self.sum_S = None
-        self.sum_SG_dic = dict()
+        self.__S = None
+        self.__sum_S = None
 
         self.__table_name = None
         self.__table_dimension = 0
@@ -78,8 +77,8 @@ class TopKInsight(object):
         self.__subspace_dimension = len(insight_dimension) - 1
         self.__measurement_attr_id = insight_dimension[0]
 
-        self.S = Subspace.create_all_start_subspace(self.__subspace_dimension)
-        self.sum_S = self.__sum(self.S)
+        self.__S = Subspace.create_all_start_subspace(self.__subspace_dimension)
+        self.__sum_S = self.__sum(self.__S)
 
 
         for subspace_attr_id in insight_dimension[1:]:
@@ -89,6 +88,10 @@ class TopKInsight(object):
                 raw_output = self.__DB.execute('select distinct %s from %s;' % (self.__table_column_names[subspace_attr_id], self.__table_name))
                 for attr_val in list(map(lambda x: x[0], raw_output)):
                     self.__dom[subspace_attr_id].append(AttributeValueFactory.get_attribute_value(attr_val))
+
+
+        # create memo table to store used subspace score
+        self.__DB.execute("create table if not exists memo (subspace text, score double precision);")
 
 
     '''Main algorithm'''
@@ -118,7 +121,7 @@ class TopKInsight(object):
             print(f'Start Ce {Ce_idx}: {Ce}')
             for subspace_id in range(len(self.__subspace_attr_ids)):
                 print(f'\tStart subspace id {subspace_id}')
-                self.__enumerate_insight(self.S, subspace_id, Ce, heap, verbose=verbose)
+                self.__enumerate_insight(self.__S, subspace_id, Ce, heap, verbose=verbose)
                 print(f'\tComplete subspace id {subspace_id}: Time Elapse {time.time() - start} sec')
 
             print(f'Complete Ce {Ce_idx}: Time Elapse {time.time() - start} sec')
@@ -135,7 +138,7 @@ class TopKInsight(object):
         print('Ce:', possible_Ce[0])
         Ce = possible_Ce[0]
         attr_val = self.__dom[self.__subspace_attr_ids[index[1]]][index[2]]
-        S_ = self.S[:]
+        S_ = self.__S[:]
         S_[index[1]] = attr_val.deepcopy()
         self.__enumerate_insight(S_, subspace_id, Ce, heap, verbose=True)
 
@@ -341,15 +344,14 @@ class TopKInsight(object):
         :return:
         :rtype: float
         """
-        sum_all_star_subspace = self.sum_S
+        sum_all_star_subspace = self.__sum_S
 
         total = 0.0
         for S_ in SG:
-            if S_ in self.sum_SG_dic:
-                sum_S_ = self.sum_SG_dic[S_]
-            else:
+            sum_S_ =  self.__subspace_score(S_)
+            if sum_S_ is None:
                 sum_S_ = self.__sum(S_)
-                self.sum_SG_dic[S_] = sum_S_
+                self.__write_subspace_score(S_, sum_S_)
             total +=  sum_S_ / sum_all_star_subspace
         return total
 
@@ -417,6 +419,17 @@ class TopKInsight(object):
         result = self.__DB.execute(query)
 
         return float(result[0][0]) if len(result) > 0 else 0.0
+
+    def __subspace_score(self, subspace: Subspace) -> Number:
+        result = self.__DB.execute("select score from memo where subspace = '%s'" % (str(subspace).replace("'", "''")))
+        return None if len(result) == 0 else result[0][0]
+
+    def __write_subspace_score(self, subspace: Subspace, score: Number):
+        self.__DB.execute("insert into memo (subspace, score) values ('%s', %s);" % (str(subspace).replace("'", "''"), str(score)))
+
+    def __del__(self):
+        self.__DB.execute("drop table memo;")
+        self.__DB.disconnect()
 
     
 if __name__ == '__main__':

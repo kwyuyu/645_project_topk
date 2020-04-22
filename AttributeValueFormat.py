@@ -37,6 +37,9 @@ class AttributeValue(ABC):
     def __eq__(self, other: AttributeValue) -> bool:
         raise NotImplemented('need to implement')
 
+    def __str__(self) -> str:
+        return str(self._value)
+
     def __repr__(self) -> str:
         return str(self._value)
 

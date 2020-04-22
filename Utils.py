@@ -68,6 +68,12 @@ class Subspace(object):
             output.append(attr_val.value)
         return hash(tuple(output))
 
+    def __str__(self) -> str:
+        output = ""
+        for attr_val in self.__subspace:
+            output += str(attr_val) + ","
+        return output
+
     def __repr__(self) -> str:
         return self.__subspace.__repr__()
 

@@ -19,6 +19,9 @@ class Database(object):
         :rtype: list of tuples
         """
         self.curs.execute(query)
+        self.conn.commit()
+        if query.split(' ')[0] != 'select':
+            return []
         return [data for data in self.curs.fetchall()]
 
     def disconnect(self):
