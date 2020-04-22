@@ -40,8 +40,11 @@ class ScoreCalculator(ABC):
 
 
 class PointScoreCalculator(ScoreCalculator):
-    def powerlaw(self, x, shape, loc, scale):
+    def powerLaw(self, x, shape, loc, scale):
         return scale * x**shape + loc
+
+    def cubicEq(self, x, a, b, c, d):
+        return a * x ** 3 + b * x ** 2 + c * x + d
 
     def sig(self, phi: OrderedDict[Subspace, Number]) -> Number:
         """
@@ -61,12 +64,22 @@ class PointScoreCalculator(ScoreCalculator):
 
         y = sorted(phi_val, reverse=True)
         x = list(range(1, len(y)+1))
+
         try:
-            param_opt, pcov = curve_fit(self.powerlaw, x[1:], y[1:], maxfev=3000)
+            param_opt, pcov = curve_fit(self.powerLaw, x[1:], y[1:], maxfev=2000)
+            func = self.powerLaw
         except:
-            import pdb;pdb.set_trace()
-            return 0.0
-        errors = y - self.powerlaw(x, *param_opt)
+            try:
+                param_opt, pcov = curve_fit(self.cubicEq, x[1:], y[1:], maxfev=2000)
+                func = self.cubicEq
+            except:
+                import ipdb;ipdb.set_trace()
+
+        try:
+            errors = y - func(x, *param_opt)
+        except: 
+            print(y)
+            #import ipdb;ipdb.set_trace()
         # Case 2: If the prediction perfectly match, the error will be too small but not equals to zero.
         if errors[0] < math.exp(-9): return 0.0
         mu, std = norm.fit(errors[1:])
