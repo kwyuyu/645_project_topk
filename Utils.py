@@ -135,23 +135,30 @@ class SiblingGroup(object):
 
 
 class Extractor(object):
-    def __init__(self, aggregate_function: AggregateType, measure_attribute_id: int, subspace_id: int):
+    def __init__(self, aggregate_function: AggregateType, measurement_attribute: str, measure_attribute_id: int, subspace_id: int):
         """
         Ce
         :param aggregate_function:
         :type aggregate_function: AggregateType
+        :param measurement_attribute:
+        :type measurement_attribute: str
         :param measure_attribute_id: attribute dimension (index)
         :type measure_attribute_id: int
         :param subspace_id: the index in Subspace that measurement_attribute is located, -1 represents main measurement
         :type subspace_id: int
         """
         self.__aggregate_function = aggregate_function
+        self.__measure_attribute = measurement_attribute
         self.__measure_attribute_id = measure_attribute_id
         self.__subspace_id = subspace_id
 
     @property
     def aggregate_type(self) -> AggregateType:
         return self.__aggregate_function
+
+    @property
+    def measurement_attribute(self) -> str:
+        return self.__measure_attribute
 
     @property
     def Dx(self) -> int:
@@ -165,7 +172,7 @@ class Extractor(object):
         return copy.deepcopy(self)
 
     def __repr__(self) -> str:
-        return str((self.aggregate_type.name, self.__measure_attribute_id))
+        return str((self.aggregate_type.name, self.__measure_attribute))
 
 
 class ComponentExtractor(object):
@@ -185,8 +192,8 @@ class ComponentExtractor(object):
             self.__Ce = _Ce
 
     @staticmethod
-    def get_default_Ce(measurement_attribute):
-        return ComponentExtractor([Extractor(AggregateType.SUM, measurement_attribute, -1)])
+    def get_default_Ce(measurement_attribute: str, measurement_attribute_id: int):
+        return ComponentExtractor([Extractor(AggregateType.SUM, measurement_attribute, measurement_attribute_id, -1)])
 
     @property
     def Ce(self) -> List[Extractor]:

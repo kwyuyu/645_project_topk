@@ -269,7 +269,7 @@ class TopKInsight(object):
         :return:
         :rtype: List[ComponentExtractor]
         """
-        output = [ComponentExtractor.get_default_Ce(self.__measurement_attr_id)]
+        output = [ComponentExtractor.get_default_Ce(self.__table_column_names[self.__measurement_attr_id], self.__measurement_attr_id)]
 
         for i, attr_id in enumerate(self.__subspace_attr_ids):
             new_output = []
@@ -277,13 +277,13 @@ class TopKInsight(object):
                 ce = output[0]
                 for aggr_type in AggregateType.get_aggregate_types():
                     ce_ = ce.deepcopy()
-                    ce_.append(Extractor(aggr_type, attr_id, i))
+                    ce_.append(Extractor(aggr_type, self.__table_column_names[attr_id], attr_id, i))
                     new_output.append(ce_)
             else:
                 for ce in output:
                     for aggr_type in self.__adj_extractors[ce[-1].aggregate_type]:
                         ce_ = ce.deepcopy()
-                        ce_.append(Extractor(aggr_type, attr_id, i))
+                        ce_.append(Extractor(aggr_type, self.__table_column_names[attr_id], attr_id, i))
                         new_output.append(ce_)
 
             output = new_output[:]
@@ -428,7 +428,7 @@ class TopKInsight(object):
         self.__DB.execute("insert into memo (subspace, score) values ('%s', %s);" % (str(subspace).replace("'", "''"), str(score)))
 
     def __del__(self):
-        self.__DB.execute("drop table memo;")
+        self.__DB.execute("drop table if exists memo;")
         self.__DB.disconnect()
 
     
