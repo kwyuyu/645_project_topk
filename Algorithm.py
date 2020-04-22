@@ -53,6 +53,10 @@ class TopKInsight(object):
         self.__subspace_attr_ids = []
         self.__measurement_attr_id = -1
 
+        self.S = None
+        self.sum_S = None
+        self.sum_SG_dic = dict()
+
         self.__table_name = None
         self.__table_dimension = 0
         self.__table_column_names = []
@@ -76,7 +80,7 @@ class TopKInsight(object):
 
         self.S = Subspace.create_all_start_subspace(self.__subspace_dimension)
         self.sum_S = self.__sum(self.S)
-        self.sum_SG_dic = {}
+
 
         for subspace_attr_id in insight_dimension[1:]:
             self.__subspace_attr_ids.append(subspace_attr_id)
