@@ -115,13 +115,14 @@ class TopKInsight(object):
 
         for Ce_idx, Ce in enumerate(possible_Ce):
             start = time.time()
-            print(f'Start Ce {Ce_idx}: {Ce}')
+            print(f'\nStart Ce {Ce_idx} / {len(possible_Ce)}: {Ce}')
             for subspace_id in range(len(self.__subspace_attr_ids)):
-                print(f'\tStart subspace id {subspace_id}')
+                print(f'\tStart subspace id {subspace_id}/{len(self.__subspace_attr_ids)}')
                 self.__enumerate_insight(self.S, subspace_id, Ce, heap, verbose=verbose)
-                print(f'\tComplete subspace id {subspace_id}: Time Elapse {time.time() - start} sec')
+                print(f'\tComplete subspace id {subspace_id}/{len(self.__subspace_attr_ids)}'
+                      f': Time Elapse {time.time() - start} sec')
 
-            print(f'Complete Ce {Ce_idx}: Time Elapse {time.time() - start} sec')
+            print(f'Complete Ce {Ce_idx} / {len(possible_Ce)}: Time Elapse {time.time() - start} sec')
 
         return heap.get_nlargest()
 
