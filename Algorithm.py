@@ -169,7 +169,7 @@ class TopKInsight(object):
         # phase I
         if self.__is_valid(SG, Ce):
             if verbose:
-                print(SG, subspace_id, index)
+                print(f'\t  subspace_id: {subspace_id}, index: {index}')
             phi = self.__extract_phi(SG, Ce)
             for _, insight_type in enumerate(InsightType):
                 if imp == 0:
