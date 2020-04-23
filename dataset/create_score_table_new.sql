@@ -1,4 +1,4 @@
-DROP TABLE IF EXISTS paper_score cascade;
+DROP TABLE IF EXISTS paper_score_new cascade;
 
 CREATE TABLE paper_score_new AS (
     with author_score(author_id, author_s) as (
