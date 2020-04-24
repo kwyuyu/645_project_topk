@@ -24,8 +24,10 @@ class Subspace(object):
             self.__subspace = _subspace
 
     @staticmethod
-    def create_all_start_subspace(size: int) -> Subspace:
-        subspace = [AttributeValueFactory.get_attribute_value('*')] * size
+    def create_all_start_subspace(subspace_attr_ids: List[int]) -> Subspace:
+        subspace = []
+        for attr_id in subspace_attr_ids:
+            subspace.append(AttributeValueFactory.get_attribute_value('*', attr_id))
         return Subspace(subspace)
 
     @property

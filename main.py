@@ -21,8 +21,8 @@ def title(text):
     return decorator
 
 
-@title('rank - score - insightType - S - SG - Ce')
-def display_results(results):
+@title('rank - score - insightType - SG - Ce')
+def display_all_results(results):
     for i, result in enumerate(results):
         print(i+1, result)
 
@@ -33,8 +33,16 @@ def main(args):
 
     driver = TopKInsight(DB)
 
-    results = driver.insights(args.table, args.k, args.insight_dim, args.verbose)
-    display_results(results)
+    results = driver.insights(args.table, args.k, args.insight_dim)
+    display_all_results(results)
+
+    # reproduce results
+    for i, Ce in enumerate(results):
+        phi = driver.reproduce_phi(Ce.SG, Ce)
+        print(phi)
+        TopKInsight.draw_result(f'rank_{i+1}_result.png', Ce, phi)
+
+
 
 
 
@@ -46,9 +54,8 @@ if __name__ == '__main__':
     parser.add_argument('--verbose', action='store_true')
     args = parser.parse_args()
 
-    args.table = 'paper_score_1000'
+    args.table = 'temp'
     args.k = 5
-    args.insight_dim = [0, 1]
-    args.verbose = False
+    args.insight_dim = [2, 0, 1]
 
     main(args)

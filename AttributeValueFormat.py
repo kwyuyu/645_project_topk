@@ -18,9 +18,10 @@ class AttributeType(enum.Enum):
 
 '''Abstract'''
 class AttributeValue(ABC):
-    def __init__(self, _type: AttributeType):
+    def __init__(self, _type: AttributeType, _attr_id: int):
         self._value = None
         self._type = _type
+        self._attr_id = _attr_id
 
     @property
     def type(self):
@@ -29,6 +30,10 @@ class AttributeValue(ABC):
     @property
     def value(self):
         return self._value
+
+    @property
+    def attribute_id(self):
+        return self._attr_id
 
     def deepcopy(self) -> AttributeValue:
         return copy.deepcopy(self)
@@ -45,8 +50,8 @@ class AttributeValue(ABC):
 
 
 class AttributeValueAll(AttributeValue):
-    def __init__(self):
-        super().__init__(AttributeType.ALL)
+    def __init__(self, _attr_id: int):
+        super().__init__(AttributeType.ALL, _attr_id)
         self._value = '*'
 
     def __eq__(self, other: AttributeValue) -> bool:
@@ -56,8 +61,8 @@ class AttributeValueAll(AttributeValue):
 
 
 class AttributeValueString(AttributeValue):
-    def __init__(self, _value: str):
-        super().__init__(AttributeType.STRING)
+    def __init__(self, _value: str, _attr_id: int):
+        super().__init__(AttributeType.STRING, _attr_id)
         self._value = _value
 
     @AttributeValue.value.setter
@@ -73,8 +78,8 @@ class AttributeValueString(AttributeValue):
 
 
 class AttributeValueNumber(AttributeValue):
-    def __init__(self, _value: Number):
-        super().__init__(AttributeType.NUMBER)
+    def __init__(self, _value: Number, _attr_id: int):
+        super().__init__(AttributeType.NUMBER, _attr_id)
         self._value = _value
 
     @AttributeValue.value.setter
@@ -95,13 +100,13 @@ class AttributeValueNumber(AttributeValue):
 '''Factory'''
 class AttributeValueFactory(object):
     @staticmethod
-    def get_attribute_value(value: NumberString) -> AttributeValue:
+    def get_attribute_value(value: NumberString, attribute_id: int) -> AttributeValue:
         if isinstance(value, int) or isinstance(value, float):
-            return AttributeValueNumber(value)
+            return AttributeValueNumber(value, attribute_id)
         elif isinstance(value, str):
             if value == '*':
-                return AttributeValueAll()
-            return AttributeValueString(value)
+                return AttributeValueAll(attribute_id)
+            return AttributeValueString(value, attribute_id)
         else:
             return None
 
