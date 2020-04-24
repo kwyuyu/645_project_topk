@@ -53,6 +53,10 @@ class TopKInsight(object):
         self.__subspace_attr_ids = []
         self.__measurement_attr_id = -1
 
+        self.S = None
+        self.sum_S = None
+        self.sum_SG_dic = dict()
+
         self.__table_name = None
         self.__table_dimension = 0
         self.__table_column_names = []
@@ -111,13 +115,14 @@ class TopKInsight(object):
 
         for Ce_idx, Ce in enumerate(possible_Ce):
             start = time.time()
-            print(f'Start Ce {Ce_idx}: {Ce}')
+            print(f'\nStart Ce {Ce_idx} / {len(possible_Ce)}: {Ce}')
             for subspace_id in range(len(self.__subspace_attr_ids)):
-                print(f'\tStart subspace id {subspace_id}')
+                print(f'\tStart subspace id {subspace_id}/{len(self.__subspace_attr_ids)}')
                 self.__enumerate_insight(self.S, subspace_id, Ce, heap, verbose=verbose)
-                print(f'\tComplete subspace id {subspace_id}: Time Elapse {time.time() - start} sec')
+                print(f'\tComplete subspace id {subspace_id}/{len(self.__subspace_attr_ids)}'
+                      f': Time Elapse {time.time() - start} sec')
 
-            print(f'Complete Ce {Ce_idx}: Time Elapse {time.time() - start} sec')
+            print(f'Complete Ce {Ce_idx} / {len(possible_Ce)}: Time Elapse {time.time() - start} sec')
 
         return heap.get_nlargest()
 
@@ -159,13 +164,13 @@ class TopKInsight(object):
         """
         local_heap = Heap(heap.capacity)
         SG = self.__generate_sibling_group(S, subspace_id)
-        imp = self.__imp(SG)
 
         # phase I
         if self.__is_valid(SG, Ce):
-            if verbose:
-                print(SG, subspace_id, index)
+            if verbose and (len(index) == 0 or index[-1] % 1000 == 0):
+                print(f'\t  subspace_id: {subspace_id}, index: {index}')
             phi = self.__extract_phi(SG, Ce)
+            imp = self.__imp(SG)
             for _, insight_type in enumerate(InsightType):
                 if imp == 0:
                     continue

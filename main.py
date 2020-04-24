@@ -21,7 +21,7 @@ def title(text):
     return decorator
 
 
-@title('rank - score - insightType - S - SG - Ce')
+@title('\n####################\n  display_results\n####################\n rank - score - insightType - S - SG - Ce')
 def display_results(results):
     for i, result in enumerate(results):
         print(i+1, result)
