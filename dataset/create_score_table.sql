@@ -13,8 +13,8 @@ CREATE TABLE paper_score AS (
         group by pa.paperid
     )
 
-    select sum(p_s.paper_s) as paper_score,
-        v.name as venue_name, v.year as venue_year, v.type as venue_type
+    select v.name as venue_name, v.year as venue_year, v.type as venue_type,
+            sum(p_s.paper_s) as paper_score
     from paper_score_temp as p_s, papers as p, venue as v
     where p_s.paper_id = p.id and p.venue = v.id
     group by venue_name, venue_year, venue_type
