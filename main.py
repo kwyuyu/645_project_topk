@@ -30,9 +30,9 @@ def display_all_results(results):
 def main(args):
     if not os.path.exists("output"):
         os.makedirs("output")
-    if not os.path.exists(f'output/{args.table}'):
-        os.makedirs(f'output/{args.table}')
-    outdir = f'output/{args.table}'
+    outdir = f'output/{args.table}_k{str(args.k)}_dim{"_".join([str(d) for d in args.insight_dim])}'
+    if not os.path.exists(outdir):
+        os.makedirs(outdir)
     logging.basicConfig(filename=f'{outdir}/result.txt', level=logging.INFO)
 
     DB = Database()
