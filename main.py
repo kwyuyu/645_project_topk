@@ -22,12 +22,11 @@ def title(text):
     return decorator
 
 
-@title('rank - score - insightType - SG - Ce')
+@title('\n####################\n  display_results\n####################\n rank - score - insightType - S - SG - Ce')
 def display_all_results(results):
     for i, result in enumerate(results):
         print(i+1, result)
         logging.info(f'{i+1} {result}')
-
 
 def main(args):
     logging.basicConfig(filename='result.txt', level=logging.INFO)
@@ -50,9 +49,6 @@ def main(args):
         logging.info(f'{i+1}, {x}, {measure}, {x_name}, {others}, {Cei}, {title_name}')
 
         TopKInsight.draw_result(f'rank_{i+1}_result.png', x, measure, x_name, others, Cei, title_name)
-
-
-
 
 
 if __name__ == '__main__':
