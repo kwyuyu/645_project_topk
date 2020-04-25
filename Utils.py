@@ -255,5 +255,5 @@ class ComponentExtractor(object):
     def __repr__(self) -> str:
         return str((self.score,
                     self.insight_type.name if self.insight_type else None,
-                    self.SG.S if self.SG else None,
+                    (self.SG.S, self.SG.Di) if self.SG is not None else None,
                     self.__Ce))

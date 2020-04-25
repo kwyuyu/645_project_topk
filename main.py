@@ -56,6 +56,6 @@ if __name__ == '__main__':
 
     args.table = 'temp'
     args.k = 5
-    args.insight_dim = [2, 0, 1]
+    args.insight_dim = [2, 0]
 
     main(args)
