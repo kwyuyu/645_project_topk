@@ -74,16 +74,18 @@ class TopKInsight(object):
         S = {}
         x = []
         x_base = -1
-        measure = []
 
         for attr_val in Ce.SG.S:
             S[TopKInsight.TABLE_COLUMN_NAME[attr_val.attribute_id]] = attr_val.value
             if attr_val.type == AttributeType.ALL:
                 x_base = attr_val.attribute_id
 
+        x_measure = []
         for subspace, score in phi.items():
-            x.append(subspace[x_base].value)
-            measure.append(score)
+            x_measure.append((subspace[x_base].value, score))
+
+        x_measure.sort(key = lambda e: e[0])
+        x, measure = zip(*x_measure)
 
         x_name = ""
         others = ""
@@ -167,17 +169,17 @@ class TopKInsight(object):
         self.__table_name = table_name
         TopKInsight.TABLE_COLUMN_NAME = self.__get_table_column_names()
         self.__table_dimension = len(TopKInsight.TABLE_COLUMN_NAME)
-        self.__subspace_dimension = self.__table_dimension - 1
+        self.__subspace_dimension = len(insight_dimension) - 1
         self.__measurement_attr_id = insight_dimension[0]
 
-        for attr_id in range(self.__subspace_dimension):
-            if attr_id != self.__measurement_attr_id:
-                self.__subspace_attr_ids.append(attr_id)
-                self.__dom[attr_id] = list()
-                raw_output = self.__DB.execute(
-                    'select distinct %s from %s;' % (TopKInsight.TABLE_COLUMN_NAME[attr_id], self.__table_name))
+
+        for subspace_attr_id in insight_dimension[1:]:
+            self.__subspace_attr_ids.append(subspace_attr_id)
+            if subspace_attr_id not in self.__dom:
+                self.__dom[subspace_attr_id] = list()
+                raw_output = self.__DB.execute('select distinct %s from %s;' % (TopKInsight.TABLE_COLUMN_NAME[subspace_attr_id], self.__table_name))
                 for attr_val in list(map(lambda x: x[0], raw_output)):
-                    self.__dom[attr_id].append(AttributeValueFactory.get_attribute_value(attr_val, attr_id))
+                    self.__dom[subspace_attr_id].append(AttributeValueFactory.get_attribute_value(attr_val, subspace_attr_id))
 
         self.__S = Subspace.create_all_start_subspace(self.__subspace_attr_ids)
         self.__sum_S = self.__sum(self.__S)
