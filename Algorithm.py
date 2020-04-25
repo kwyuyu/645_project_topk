@@ -69,7 +69,26 @@ class TopKInsight(object):
 
 
     @staticmethod
-    def draw_result(file_name: str, Ce: ComponentExtractor, phi: OrderedDict[Subspace, Number]):
+    def draw_result(file_name: str, x, measure, x_name, others, Cei, title):
+        plt.clf()
+
+        if len(others) == 0:
+            plt.plot(x, measure, marker='s', color=(0.2, 0.2, 0.2, 0.8))
+        else:
+            plt.plot(x, measure, marker='s', color=(0.2, 0.2, 0.2, 0.8), label=others)
+            plt.legend(loc='upper left')
+
+        plt.bar(x, measure, color=(0.7, 0.7, 0.7, 0.5), width=0.35, edgecolor=(0.2, 0.2, 0.2, 0.8), linewidth=1)
+
+        plt.xlabel(x_name)
+        plt.ylabel(Cei)
+        plt.title(title)
+
+        # plt.show()
+        plt.savefig(file_name)
+
+    @staticmethod
+    def convert_result_to_drawing_input(Ce: ComponentExtractor, phi: OrderedDict[Subspace, Number]):
         Cei = Ce.Ce[-1].aggregate_type.name
         x_base = Ce.SG.Di
 
@@ -77,7 +96,7 @@ class TopKInsight(object):
         for subspace, score in phi.items():
             x_measure.append((subspace[x_base].value, score))
 
-        x_measure.sort(key = lambda e: e[0])
+        x_measure.sort(key=lambda e: e[0])
         x, measure = zip(*x_measure)
 
         x_name = TopKInsight.TABLE_COLUMN_NAME[x_base]
@@ -88,21 +107,7 @@ class TopKInsight(object):
                 others += f'{TopKInsight.TABLE_COLUMN_NAME[attr_val.attribute_id]} {attr_val.value},'
         others = others[:-1]
 
-        plt.clf()
-        plt.bar(x, measure, color=(0.7, 0.7, 0.7, 0.5), width=0.35, edgecolor=(0.2, 0.2, 0.2, 0.8), linewidth=1)
-
-        if len(others) == 0:
-            plt.plot(x, measure, marker='s', color=(0.2, 0.2, 0.2, 0.8))
-        else:
-            plt.plot(x, measure, marker='s', color=(0.2, 0.2, 0.2, 0.8), label=others)
-            plt.legend(loc='upper left')
-
-        plt.xlabel(x_name)
-        plt.ylabel(Cei)
-        plt.title(Ce.__repr__())
-
-        # plt.show()
-        plt.savefig(file_name)
+        return (x, measure, x_name, others, Cei, Ce.__repr__())
 
 
     '''Main algorithm'''
@@ -170,7 +175,7 @@ class TopKInsight(object):
         # self.__subspace_dimension = len(insight_dimension) - 1
         self.__measurement_attr_id = insight_dimension[0]
 
-        for attr_id in range(self.__subspace_dimension):
+        for attr_id in range(self.__table_dimension):
             if attr_id != self.__measurement_attr_id:
                 self.__subspace_attr_ids.append(attr_id)
                 self.__dom[attr_id] = list()

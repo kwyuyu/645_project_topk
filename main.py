@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import warnings
 import argparse
+import logging
 
 from DatabaseOperation import *
 from Algorithm import *
@@ -25,9 +26,12 @@ def title(text):
 def display_all_results(results):
     for i, result in enumerate(results):
         print(i+1, result)
+        logging.info(f'{i+1} {result}')
 
 
 def main(args):
+    logging.basicConfig(filename='result.txt', level=logging.INFO)
+
     DB = Database()
     DB.connect('localhost', 5432, 'postgres', 'postgres')
 
@@ -36,11 +40,16 @@ def main(args):
     results = driver.insights(args.table, args.k, args.insight_dim)
     display_all_results(results)
 
+    logging.info(str((args.table, args.k, args.insight_dim)))
+
     # reproduce results
     for i, Ce in enumerate(results):
         phi = driver.reproduce_phi(Ce.SG, Ce)
-        print(phi)
-        TopKInsight.draw_result(f'rank_{i+1}_result.png', Ce, phi)
+        x, measure, x_name, others, Cei, title_name = TopKInsight.convert_result_to_drawing_input(Ce, phi)
+
+        logging.info(f'{i+1}, {x}, {measure}, {x_name}, {others}, {Cei}, {title_name}')
+
+        TopKInsight.draw_result(f'rank_{i+1}_result.png', x, measure, x_name, others, Cei, title_name)
 
 
 
@@ -54,8 +63,8 @@ if __name__ == '__main__':
     parser.add_argument('--verbose', action='store_true')
     args = parser.parse_args()
 
-    args.table = 'temp'
-    args.k = 5
-    args.insight_dim = [2, 0]
+    # args.table = 'temp'
+    # args.k = 5
+    # args.insight_dim = [2, 0]
 
     main(args)
