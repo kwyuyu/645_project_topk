@@ -19,6 +19,7 @@ CREATE TABLE q1 AS (
     where p_s.paper_id = p.id and p.venue = v.id
     and v.year <> 0 and school <> ''
     group by venue_year, school
+    order by paper_score DESC, venue_year, school
 );
 alter table q1 add primary key (venue_year, school);
 

@@ -20,6 +20,7 @@ CREATE TABLE q3 AS (
     and v.year <> 0 and school <> ''
     and to_tsvector('english', p.name) @@ to_tsquery('english', 'graph')
     group by venue_year, school
+    order by paper_score DESC, venue_year, school
 );
 alter table q3 add primary key (venue_year, school);
 

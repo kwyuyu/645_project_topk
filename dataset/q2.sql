@@ -31,6 +31,7 @@ CREATE TABLE q2 AS (
     from paper_cnt as pc, distinct_collaborator_cnt as dcc, auth_score as a_s
     where pc.author_id = dcc.author_id and pc.author_id = a_s.author_id
     group by paper_cnt, collaborations
+    order by auth_score DESC, collaborations DESC, paper_cnt DESC
 );
 alter table q2 add primary key (paper_cnt, collaborations);
 
