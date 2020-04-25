@@ -76,13 +76,17 @@ class TopKInsight(object):
             plt.plot(x, measure, marker='s', color=(0.2, 0.2, 0.2, 0.8))
         else:
             plt.plot(x, measure, marker='s', color=(0.2, 0.2, 0.2, 0.8), label=others)
-            plt.legend(loc='upper left')
+            plt.legend(loc='upper left', prop={'size': 6})
 
         plt.bar(x, measure, color=(0.7, 0.7, 0.7, 0.5), width=0.35, edgecolor=(0.2, 0.2, 0.2, 0.8), linewidth=1)
 
-        plt.xlabel(x_name)
-        plt.ylabel(Cei)
         plt.title(title, fontsize=6)
+        plt.xlabel(x_name, fontsize=6)
+        plt.xticks(rotation=90, fontsize=6)
+        plt.ylabel(Cei, fontsize=6)
+        plt.yticks(fontsize=6)
+
+        plt.gcf().subplots_adjust(left=0.17, right=0.95, bottom=0.40, top=0.9)
 
         # plt.show()
         plt.savefig(file_name)
