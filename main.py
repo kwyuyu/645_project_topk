@@ -1,13 +1,11 @@
 from __future__ import annotations
 
+import os
 import warnings
 import argparse
 import logging
-
 from DatabaseOperation import *
 from Algorithm import *
-
-
 warnings.filterwarnings('ignore')
 
 
@@ -28,8 +26,14 @@ def display_all_results(results):
         print(i+1, result)
         logging.info(f'{i+1} {result}')
 
+
 def main(args):
-    logging.basicConfig(filename='result.txt', level=logging.INFO)
+    if not os.path.exists("output"):
+        os.makedirs("output")
+    if not os.path.exists(f'output/{args.table}'):
+        os.makedirs(f'output/{args.table}')
+    outdir = f'output/{args.table}'
+    logging.basicConfig(filename=f'{outdir}/result.txt', level=logging.INFO)
 
     DB = Database()
     DB.connect('localhost', 5432, 'postgres', 'postgres')
@@ -48,7 +52,7 @@ def main(args):
 
         logging.info(f'{i+1}, {x}, {measure}, {x_name}, {others}, {Cei}, {title_name}')
 
-        TopKInsight.draw_result(f'rank_{i+1}_result.png', x, measure, x_name, others, Cei, title_name)
+        TopKInsight.draw_result(f'{outdir}/rank_{i+1}_result.png', x, measure, x_name, others, Cei, title_name)
 
 
 if __name__ == '__main__':
@@ -60,8 +64,8 @@ if __name__ == '__main__':
     parser.add_argument('--verbose', action='store_true')
     args = parser.parse_args()
 
-    # args.table = 's_paper_score'
-    # args.k = 5
-    # args.insight_dim = [2, 1]
+    # args.table = 's_q1'
+    # args.k = 10
+    # args.insight_dim = [2,1]
 
     main(args)
