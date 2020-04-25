@@ -163,6 +163,10 @@ class Extractor(object):
         return self.__measure_attribute
 
     @property
+    def measure_attribute_id(self) -> int:
+        return self.__measure_attribute_id
+
+    @property
     def Dx(self) -> int:
         return self.__measure_attribute_id
 

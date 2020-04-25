@@ -55,12 +55,13 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--table', default='sales', type=str)
     parser.add_argument('--k', default=10, type=int, help='top K result')
-    parser.add_argument('--insight_dim', default=[2,0,1], nargs="+", type=int)
+    parser.add_argument('--insight_dim', default=[2,0,1],
+                        help="[measure id (SHOULD BE last COLUMN of TABLE), D1 id, D2 id, ...]", nargs="+", type=int)
     parser.add_argument('--verbose', action='store_true')
     args = parser.parse_args()
 
-    # args.table = 'temp'
+    # args.table = 's_paper_score'
     # args.k = 5
-    # args.insight_dim = [2, 0]
+    # args.insight_dim = [2, 1]
 
     main(args)

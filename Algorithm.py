@@ -276,11 +276,13 @@ class TopKInsight(object):
         """
         if level > 0:
             phi_level = collections.OrderedDict()
-            D_e, subspace_id = Ce[level].Dx, Ce[level].subspace_id
+            # D_e, subspace_id = Ce[level].Dx, Ce[level].subspace_id
+            D_e, measure_attribute_id = Ce[level].Dx, Ce[level].measure_attribute_id
 
             for attr_val in self.__dom[D_e]:
                 S_v = S_[:]
-                S_v[subspace_id] = attr_val.deepcopy()
+                # S_v[subspace_id] = attr_val.deepcopy()
+                S_v[measure_attribute_id] = attr_val.deepcopy()
                 M_v = self.__recur_extract(S_v, level - 1, Ce)
                 phi_level[S_v] = M_v
 
@@ -306,6 +308,8 @@ class TopKInsight(object):
         """
         aggregate_function = AggregateFunctionFactory.get_aggregate_function(aggregate_type)
         result = aggregate_function.measurement(phi_level)
+        if S not in result:
+            return sum(result[entry] for entry in result)
         return result[S]
 
 
