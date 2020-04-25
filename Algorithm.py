@@ -82,7 +82,7 @@ class TopKInsight(object):
 
         plt.xlabel(x_name)
         plt.ylabel(Cei)
-        plt.title(title)
+        plt.title(title, fontsize=6)
 
         # plt.show()
         plt.savefig(file_name)
