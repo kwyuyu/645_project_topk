@@ -22,5 +22,6 @@ CREATE TABLE s_paper_score AS (
     where p_s.paper_id = p.id and p.venue = v.id
 );
 
+alter table s_paper_score add primary key (venue_name, venue_year, venue_type);
 
 
