@@ -1,11 +1,31 @@
-# Create tables: run create_dataset.sql
-# Create example table: run create_sales_table.sql
-# Create required tables: run create_score_table.sql or create_small_score_table.sql
+# Create required tables:
+# Run q1.sql, q2.sql, q3.sql, q4.sql, and extension.sql in postgres
 
-# Run table: sales
-python main.py
+# Command:
+# python main.py \
+#    --table [table_name] \
+#    --k [top_k (default=10)] \
+#    --insight_dim [list_of_dimension (the first element should be the measure.)]
 
-# Run table: paper_score / s_paper_score
-# Schema = [paper_score, venue_name, venue_year, venue_type]
-python main.py --table paper_score --k 10 --insight_dim 0 1 2
+# Q1. tau = 2
+python main.py --table q1 --k 10 --insight_dim 2 0
+python main.py --table q1 --k 10 --insight_dim 2 1
+# Q1. tau = 3
+python main.py --table q1 --k 10 --insight_dim 2 0 1
+
+# Q2.
+python main.py --table q2 --k 10 --insight_dim 2 0
+python main.py --table q2 --k 10 --insight_dim 2 1
+
+# Q3.
+python main.py --table q3 --k 10 --insight_dim 2 0
+python main.py --table q3 --k 10 --insight_dim 2 1
+
+# Q4.
+python main.py --table q4 --k 10 --insight_dim 2 0
+python main.py --table q4 --k 10 --insight_dim 2 1
+
+# Extension.
+python main.py --table ext_dl --k 10 --insight_dim 2 0
+python main.py --table ext_dl --k 10 --insight_dim 2 1
 
